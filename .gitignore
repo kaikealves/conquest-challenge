@@ -4,3 +4,9 @@ notes/
 # Employer-supplied materials: the brief and third-party ledger data.
 # Kept locally, never committed. See README for where to place them.
 brief/
+
+# Build output and tooling caches
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
