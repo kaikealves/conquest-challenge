@@ -1,0 +1,10 @@
+{
+  "id": "french-chart",
+  "name": "French chart of accounts",
+  "categories": [
+    { "label": "Purchases", "categoryRoots": ["60", "61", "62"] },
+    { "label": "Staff costs", "categoryRoots": ["63", "64"] },
+    { "label": "Sales", "categoryRoots": ["70"] },
+    { "label": "Other income", "categoryRoots": ["71", "72", "75"] }
+  ]
+}
