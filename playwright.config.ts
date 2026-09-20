@@ -7,8 +7,7 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  retries: process.env.CI ? 2 : 0,
-  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
+  reporter: [['list']],
   use: {
     baseURL,
     trace: 'on-first-retry',
@@ -18,11 +17,15 @@ export default defineConfig({
    * End-to-end tests run against the production bundle, not the dev server, so
    * they exercise what actually ships — including the MSW worker served from
    * `public/`.
+   *
+   * `reuseExistingServer` stays false even locally. Reusing whatever already
+   * answers on this port would skip the build and quietly test a stale `dist/`,
+   * which defeats the point of building first.
    */
   webServer: {
     command: `npm run build && npm run preview -- --port ${port} --strictPort`,
     url: baseURL,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
     timeout: 120_000,
   },
 });
