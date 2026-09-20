@@ -30,12 +30,16 @@ export class AccountCode {
   }
 
   /**
-   * Whether this Account sits under the given prefix. Matching is textual and
-   * left-anchored, never numeric: `70` must match `701000` but not `607000`,
-   * and a code shorter than the prefix simply does not match.
+   * Whether this Account sits under the given ancestor code. Matching is
+   * textual and left-anchored, never numeric: `70` must match `701000` but not
+   * `607000`, and a code shorter than the ancestor simply does not match.
+   *
+   * Callers pass an ancestor code rather than doing this themselves, because
+   * every silent-dropping bug in this domain starts with a `startsWith`, a
+   * `parseInt` or a `padStart` written at a call site.
    */
-  isUnder(prefix: string): boolean {
-    return this.#value.startsWith(prefix);
+  isUnder(ancestorCode: string): boolean {
+    return this.#value.startsWith(ancestorCode);
   }
 
   equals(other: AccountCode): boolean {

@@ -7,10 +7,16 @@
 /** An AccountCode prefix that decides whether an Account belongs to a Category. */
 export type CategoryRoot = string;
 
-/** One labelled line of a Report, holding every Account matched by its CategoryRoots. */
+/**
+ * The definition of one Category within a ReportTemplate.
+ *
+ * The glossary has one word, Category, for both this and the computed line in a
+ * Report. They are genuinely two things — a rule and its result — so they are
+ * named apart here; the gap is worth resolving in the Reporting glossary.
+ */
 export interface CategoryDefinition {
   readonly label: string;
-  readonly roots: readonly CategoryRoot[];
+  readonly categoryRoots: readonly CategoryRoot[];
 }
 
 /** An ordered set of Categories defining the shape of a Report. */

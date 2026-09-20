@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  90071992547409.92 plus 0.01, posted to Accounts under one CategoryRoot.
+
+  The exact answer is 90071992547409.93. Past 2^53 minor units a double cannot
+  represent every cent, so a floating-point pipeline returns 90071992547409.94 —
+  and .toFixed(2) cannot rescue it, which is the point: this fixture fails for a
+  float implementation that merely rounds on the way out.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>90071992547409.92</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-08</date><internalID>{ENTRY-1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>606200</number><name>Petit equipement</name>
+      <debit>0.01</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-09</date><internalID>{ENTRY-2}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

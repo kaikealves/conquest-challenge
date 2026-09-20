@@ -31,15 +31,31 @@ and mid-value is exactly where a parser that only pretends to stream falls over.
 Only the CLI in `scripts/` touches the filesystem.
 
 Money is an exact count of minor units held as a `bigint`, parsed straight from
-the provider's decimal text without ever passing through `Number`. A fixture
-named `amounts-that-break-floating-point.xml` posts 0.10 and 0.20 and expects
-0.30, which fails the moment an amount becomes a JavaScript number. An unknown
-currency throws rather than assuming two decimal places, because that assumption
-silently scales JPY by a hundred.
+the provider's decimal text without ever passing through `Number`. Two fixtures
+pin that: `amounts-that-break-floating-point.xml` is the classic 0.10 + 0.20, and
+`amounts-beyond-float-precision.xml` sums past 2^53 minor units where a float
+returns 90071992547409.94 instead of .93 — the second exists because the first
+would also pass for a float implementation that merely rounds on the way out. An
+unknown currency throws rather than assuming two decimal places, because that
+assumption silently scales JPY by a hundred.
 
-Entries carry a signed amount — debit positive, credit negative — so a balanced
-Transaction is one summing to zero. That is the shape ticket 05's invariant
-needs, and it is why Sales totals are negative: revenue carries a credit balance.
+Missing fields fail loudly. An entry without a currency, date, Account code or
+identifier is an error, not a default: the first version defaulted currency to
+EUR, which had the importer guessing the one thing Money explicitly refuses to
+guess.
+
+Entries carry a signed amount — debit positive, credit negative — computed as
+debit minus credit, so a row carrying both columns is netted rather than having
+one side discarded. It is why Sales totals are negative: revenue carries a credit
+balance, which is correct double-entry and a presentation question for ticket 11,
+not a pipeline one.
+
+Transaction is deliberately absent. Ticket 04 first grouped Entries into
+Transactions by emitting whenever the identifier changed; review showed the
+Provider sorts its payload by Account, so the sample's 1202 Transactions arrive
+as 6536 fragments and that grouping is simply wrong. It is removed rather than
+left to mislead, and the finding plus a proposed resolution is recorded in
+ticket 05, which owns the decision.
 
 **Verified against the real ledger, not just the fixtures.** The script processed
 the 5.5 MB sample in 1.4 s, and its four Category totals match a completely
@@ -57,7 +73,18 @@ Accounts matched by no Category are dropped rather than surfaced (ticket 09), an
 an AuxiliaryAccount is not yet rolled up to its ControlAccount (ticket 06), so
 the fixtures use Chart of Accounts codes only.
 
-`src/shared/pipeline/` is a judgement call worth a reviewer's eye: the
-composition belongs to neither bounded context, and ADR-0004 gives `shared` as
-the home for code no feature owns. The precedent is `src/shared/mocks/` from
-ticket 02.
+`src/shared/pipeline/` holds wiring only. Translation belongs to Ledger's
+importer and aggregation to Reporting's `ReportAggregator`; an earlier version
+folded Entries into Account totals inside the pipeline, which put Reporting's
+own work — "aggregates Entries into Categories" — in `shared`. With the domain
+behaviour back in its context, a composition file in `shared` is what ADR-0004
+allows for code no feature owns.
+
+Two rules are deferred and marked where they will change rather than left
+silent: an Account matched by two Categories is counted in both, which ticket 08
+fixes with longest-root-wins, and an Account matched by none is dropped, which
+ticket 09 surfaces. Today's templates use disjoint CategoryRoots, so neither
+bites yet.
+
+For ticket 10: `report.template` is the human label, not a stable identifier.
+Story 13 puts the ReportTemplate in the URL, so a slug will be wanted.

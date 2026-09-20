@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import process from 'node:process';
 
 import type { ReportTemplate } from '../src/features/reporting/reportTemplate.ts';
-import { buildReportFromProviderPayload } from '../src/shared/pipeline/buildReport.ts';
+import { buildReportFromProviderPayload } from '../src/shared/pipeline/pipeline.ts';
 
 /**
  * The importer as a build-time script, per ADR-0002: it reads a Provider payload

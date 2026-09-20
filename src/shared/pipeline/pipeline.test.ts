@@ -1,8 +1,9 @@
 import { expect, test } from 'vitest';
 
+import beyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import floatingPointTrap from './fixtures/amounts-that-break-floating-point.xml?raw';
 import twoPurchasesAndOneSale from './fixtures/two-purchases-and-one-sale.xml?raw';
-import { buildReportFromProviderPayload } from './buildReport.ts';
+import { buildReportFromProviderPayload } from './pipeline.ts';
 import type { ReportTemplate } from '../../features/reporting/reportTemplate.ts';
 
 /**
@@ -29,7 +30,7 @@ async function* inChunks(payload: string, size = 64): AsyncIterable<string> {
 
 const purchases: ReportTemplate = {
   name: 'Purchases only',
-  categories: [{ label: 'Purchases', roots: ['606'] }],
+  categories: [{ label: 'Purchases', categoryRoots: ['606'] }],
 };
 
 test('a Category totals every Entry its CategoryRoot matches, and no others', async () => {
@@ -45,4 +46,13 @@ test('amounts stay exact where floating point would drift', async () => {
 
   // 0.1 + 0.2 is 0.30000000000000004 as a JavaScript number.
   expect(report.categories[0]?.total).toBe('0.30');
+});
+
+test('amounts stay exact beyond the range a float can count cents in', async () => {
+  const report = await buildReportFromProviderPayload(inChunks(beyondFloatPrecision), purchases);
+
+  // A float gives 90071992547409.94 here, and rounding on the way out does not
+  // recover the lost cent — so this fails for any implementation that is not
+  // exact all the way through.
+  expect(report.categories[0]?.total).toBe('90071992547409.93');
 });

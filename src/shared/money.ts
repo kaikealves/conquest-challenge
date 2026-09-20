@@ -71,6 +71,14 @@ export function add(left: Money, right: Money): Money {
   return { minorUnits: left.minorUnits + right.minorUnits, currency: left.currency };
 }
 
+export function subtract(left: Money, right: Money): Money {
+  if (left.currency !== right.currency) {
+    throw new Error(`Cannot subtract ${right.currency} from ${left.currency}.`);
+  }
+
+  return { minorUnits: left.minorUnits - right.minorUnits, currency: left.currency };
+}
+
 export function negate(money: Money): Money {
   return { minorUnits: -money.minorUnits, currency: money.currency };
 }

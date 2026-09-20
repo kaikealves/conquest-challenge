@@ -1,11 +1,11 @@
 import { SaxesParser } from 'saxes';
 
 import { AccountCode } from '../../../shared/accountCode.ts';
-import { moneyFromDecimal, negate, type Money } from '../../../shared/money.ts';
-import type { Entry, Transaction } from '../entry.ts';
+import { moneyFromDecimal, subtract } from '../../../shared/money.ts';
+import type { Entry } from '../entry.ts';
 
 /**
- * Translates one Provider's payload into Ledger Transactions.
+ * Translates one Provider's payload into Ledger Entries.
  *
  * This file is the anti-corruption layer of ADR-0002 and the only place where
  * Provider vocabulary is allowed to appear. `wsGeneralLedger`, `collectif`,
@@ -13,12 +13,12 @@ import type { Entry, Transaction } from '../entry.ts';
  * nothing past this boundary knows the Provider exists. Adding a second Provider
  * means adding a sibling of this file, not touching reporting code.
  *
- * Parsing is incremental. The sample ledger is 5.5 MB of XML and thirty years of
+ * Parsing is incremental. The sample ledger is 5.5 MB and thirty years of
  * accounting data would be far more, so the payload is consumed as it arrives
  * and never held as one document.
  */
 
-/** The Provider's field names. Confined to this module by design. */
+/** The Provider's own field names. Confined to this module by design. */
 const PROVIDER_ENTRY_ELEMENT = 'wsGeneralLedger';
 const PROVIDER_FIELDS = {
   accountCode: 'number',
@@ -27,83 +27,82 @@ const PROVIDER_FIELDS = {
   credit: 'credit',
   currency: 'currency',
   date: 'date',
-  transaction: 'header',
-  entry: 'internalID',
-  journal: 'ref',
+  entryId: 'internalID',
 } as const;
 
-type ProviderEntry = Partial<Record<keyof typeof PROVIDER_FIELDS, string>>;
+type ProviderField = keyof typeof PROVIDER_FIELDS;
+type ProviderEntry = Partial<Record<ProviderField, string>>;
 
-const FIELD_BY_PROVIDER_NAME = new Map<string, keyof typeof PROVIDER_FIELDS>(
+const FIELD_BY_PROVIDER_NAME = new Map<string, ProviderField>(
   Object.entries(PROVIDER_FIELDS).map(([field, providerName]) => [
     providerName,
-    field as keyof typeof PROVIDER_FIELDS,
+    field as ProviderField,
   ]),
 );
 
-/**
- * A debit is positive and a credit negative, so that a balanced Transaction sums
- * to zero. The Provider sends both columns with the unused one as "0".
- */
-function amountOf(raw: ProviderEntry, currency: string): Money {
-  const debit = moneyFromDecimal(raw.debit ?? '0', currency);
-  const credit = moneyFromDecimal(raw.credit ?? '0', currency);
+function required(raw: ProviderEntry, field: ProviderField): string {
+  const value = raw[field];
 
-  return debit.minorUnits === 0n ? negate(credit) : debit;
+  if (value === undefined || value.trim() === '') {
+    throw new Error(`A provider entry is missing <${PROVIDER_FIELDS[field]}>.`);
+  }
+
+  return value.trim();
+}
+
+/**
+ * The Provider sends two columns with the unused one as "0". A debit is positive
+ * and a credit negative, so a balanced set of Entries sums to zero.
+ *
+ * Subtracting rather than picking whichever column is non-zero means a row
+ * carrying both is netted instead of having one side silently discarded. No such
+ * row exists in the sample, which is exactly why the careless version would have
+ * survived.
+ */
+function amountOf(raw: ProviderEntry): ReturnType<typeof moneyFromDecimal> {
+  const currency = required(raw, 'currency');
+
+  return subtract(
+    moneyFromDecimal(raw.debit ?? '0', currency),
+    moneyFromDecimal(raw.credit ?? '0', currency),
+  );
 }
 
 function toEntry(raw: ProviderEntry): Entry {
-  const code = raw.accountCode;
-  const id = raw.entry;
-
-  if (code === undefined || id === undefined) {
-    throw new Error(
-      `A provider entry is missing ${code === undefined ? PROVIDER_FIELDS.accountCode : PROVIDER_FIELDS.entry}.`,
-    );
-  }
-
   return {
-    id,
-    account: AccountCode.of(code),
-    accountName: raw.accountName ?? '',
-    amount: amountOf(raw, raw.currency ?? 'EUR'),
-    date: raw.date ?? '',
-    journal: raw.journal ?? '',
+    id: required(raw, 'entryId'),
+    account: AccountCode.of(required(raw, 'accountCode')),
+    accountName: raw.accountName?.trim() ?? '',
+    amount: amountOf(raw),
+    date: required(raw, 'date'),
   };
 }
 
 /**
- * Reads a Provider payload and yields Transactions, grouping Entries by the
- * Provider's own transaction identifier.
+ * Reads a Provider payload and yields Entries as they are parsed.
  *
- * Entries of one Transaction arrive together, so a Transaction is emitted as
- * soon as a different identifier appears rather than after the whole document —
- * that is what keeps memory flat.
+ * Entries are yielded individually rather than grouped: this Provider sorts its
+ * payload by Account, so the Entries of one accounting Transaction are scattered
+ * across the whole document and cannot be grouped by a single forward pass. See
+ * ticket 05.
  */
-export async function* readTransactions(
-  payload: AsyncIterable<string>,
-): AsyncGenerator<Transaction> {
+export async function* readEntries(payload: AsyncIterable<string>): AsyncGenerator<Entry> {
   const parser = new SaxesParser();
+  const parsed: ProviderEntry[] = [];
 
   let raw: ProviderEntry | undefined;
-  let field: keyof typeof PROVIDER_FIELDS | undefined;
-  let openTransactionId: string | undefined;
-  let openEntries: Entry[] = [];
-  const ready: Transaction[] = [];
+  let field: ProviderField | undefined;
 
   parser.on('opentag', (tag) => {
     if (tag.name === PROVIDER_ENTRY_ELEMENT) {
       raw = {};
-      return;
-    }
-
-    if (raw !== undefined) {
+    } else if (raw !== undefined) {
       field = FIELD_BY_PROVIDER_NAME.get(tag.name);
     }
   });
 
-  // Text can arrive in several callbacks when a value straddles a chunk
-  // boundary, so it is appended rather than assigned.
+  // Text arrives in several callbacks when a value straddles a chunk boundary,
+  // so it is appended rather than assigned.
   parser.on('text', (text) => {
     if (raw !== undefined && field !== undefined) {
       raw[field] = (raw[field] ?? '') + text;
@@ -111,43 +110,21 @@ export async function* readTransactions(
   });
 
   parser.on('closetag', (tag) => {
-    if (tag.name !== PROVIDER_ENTRY_ELEMENT) {
-      field = undefined;
-      return;
+    if (tag.name === PROVIDER_ENTRY_ELEMENT && raw !== undefined) {
+      parsed.push(raw);
+      raw = undefined;
     }
 
-    if (raw === undefined) {
-      return;
-    }
-
-    const transactionId = raw.transaction ?? raw.entry ?? '';
-
-    if (openTransactionId !== undefined && transactionId !== openTransactionId) {
-      ready.push({ id: openTransactionId, entries: openEntries });
-      openEntries = [];
-    }
-
-    openTransactionId = transactionId;
-    openEntries.push(toEntry(raw));
-    raw = undefined;
     field = undefined;
   });
 
   for await (const chunk of payload) {
     parser.write(chunk);
 
-    while (ready.length > 0) {
-      yield ready.shift() as Transaction;
-    }
+    yield* parsed.splice(0).map(toEntry);
   }
 
   parser.close();
 
-  while (ready.length > 0) {
-    yield ready.shift() as Transaction;
-  }
-
-  if (openTransactionId !== undefined) {
-    yield { id: openTransactionId, entries: openEntries };
-  }
+  yield* parsed.splice(0).map(toEntry);
 }
