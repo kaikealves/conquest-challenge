@@ -7,10 +7,16 @@ export default defineConfig({
   testDir: './e2e',
   fullyParallel: true,
   forbidOnly: Boolean(process.env.CI),
-  reporter: [['list']],
+  // In CI the run is read after the fact, not watched: the github reporter
+  // annotates failures on the diff, and the html reporter is what carries
+  // the traces the workflow uploads. Locally, streaming output is better.
+  reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL,
-    trace: 'on-first-retry',
+    // There are no retries, so 'on-first-retry' would never capture
+    // anything. A failure in CI is the one case where a trace is worth
+    // having, and the workflow uploads it.
+    trace: 'retain-on-failure',
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   /**
