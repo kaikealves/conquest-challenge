@@ -1,0 +1,14 @@
+@import 'tailwindcss';
+
+/* The application has one theme. Declaring it stops a reader's dark-mode
+   preference leaving dark text on a dark background. */
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-white);
+    color: var(--color-slate-900);
+  }
+}
