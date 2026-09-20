@@ -1,4 +1,14 @@
+---
+status: superseded by ADR-0007
+---
+
 # No backend in scope; MSW defines the API boundary
+
+> **Superseded by [ADR-0007](./0007-static-json-is-the-api-not-msw.md).** The
+> conclusion that no backend is built still holds. The claim that MSW is the API
+> boundary in every environment does not: it rejected static JSON on reasoning
+> that confused a bundled `import` with an HTTP `fetch`, and cost 158 kB gzipped
+> in the production bundle to do it.
 
 The brief asks for a Kotlin/Spring backend _and_ a React SPA, but grading weight
 and a two-day budget both sit with the frontend. We define the REST contract as

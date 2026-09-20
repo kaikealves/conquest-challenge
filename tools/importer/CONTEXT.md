@@ -1,8 +1,8 @@
 # Ledger
 
-Receives accounting data from external providers and holds it as balanced
-double-entry Transactions. This context owns the integrity of the accounting
-record; it does no aggregation.
+Receives accounting data from external providers and holds it as Entries posted
+to Accounts. This context owns the integrity of the accounting record; it does no
+aggregation. It lives entirely in `tools/importer/` and never runs in a browser.
 
 ## Language
 
@@ -12,9 +12,14 @@ date.
 _Avoid_: line, record, posting, transaction
 
 **Transaction**:
-A set of Entries that balance to zero. The unit of accounting integrity, and the
-only way Entries may be created.
+A set of Entries that balance to zero. The unit of accounting integrity.
 _Avoid_: voucher, batch, journal entry
+
+_Not modelled in code._ This Provider sorts its payload by Account, so one
+Transaction's Entries are scattered across the document and cannot be grouped in
+a single forward pass. Validating the zero-sum invariant therefore needs a design
+of its own, which the dossier argues rather than the code implementing; its only
+observable output is a count.
 
 **Journal**:
 The book a Transaction belongs to, naming where it originated — sales, bank,

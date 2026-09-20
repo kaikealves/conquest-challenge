@@ -110,10 +110,13 @@ to the ProfitAndLoss.
   two top-level feature directories, so the source layout is the context map.
 - The importer is an **anti-corruption layer** per ADR-0002. Provider vocabulary
   terminates there; no provider term appears in the domain model.
-- **No backend is implemented.** The REST contract is defined as MSW handlers per
-  ADR-0003, and the Kotlin/Spring design is delivered as prose in the dossier.
-- **Feature-first source layout** with a shared layer for code owned by no
-  feature, per ADR-0004.
+- **No backend is implemented.** The importer stands in for it at build time and
+  writes the JSON the application fetches; the REST contract is that URL shape
+  and payload schema, per ADR-0007. The Kotlin/Spring design is delivered as
+  prose in the dossier.
+- **All accounting logic lives in `tools/importer/`, outside the application**,
+  per ADR-0006. `src/` is the React application and holds no domain model.
+- **Feature-first source layout** within the application, per ADR-0004.
 - **TanStack Query owns all server state** per ADR-0005.
 
 ### Ledger context
