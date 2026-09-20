@@ -19,17 +19,17 @@ plus a written design dossier.
 
 Pinned at the versions current when chosen.
 
-| Concern | Choice |
-|---|---|
-| Build | Vite 8, React 19, TypeScript |
-| Styling | Tailwind 4 — CSS-first config via `@tailwindcss/vite`, **no `tailwind.config.js`**; shadcn/ui for interactive primitives |
-| Routing | react-router; ReportTemplate and Period live in the URL |
-| Server state | TanStack Query 5 — never `useEffect` for fetching (ADR-0005) |
-| Mock API | MSW 2 — the handlers **are** the API contract (ADR-0003) |
-| Tests | Vitest + React Testing Library; Playwright for end-to-end |
-| Lint | ESLint + Prettier |
-| Excel | ExcelJS 4 — not `xlsx`, whose npm build is frozen at an old version |
-| Deploy | Vercel |
+| Concern      | Choice                                                                                                                   |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------ |
+| Build        | Vite 8, React 19, TypeScript                                                                                             |
+| Styling      | Tailwind 4 — CSS-first config via `@tailwindcss/vite`, **no `tailwind.config.js`**; shadcn/ui for interactive primitives |
+| Routing      | react-router; ReportTemplate and Period live in the URL                                                                  |
+| Server state | TanStack Query 5 — never `useEffect` for fetching (ADR-0005)                                                             |
+| Mock API     | MSW 2 — the handlers **are** the API contract (ADR-0003)                                                                 |
+| Tests        | Vitest + React Testing Library; Playwright for end-to-end                                                                |
+| Lint         | ESLint + Prettier                                                                                                        |
+| Excel        | ExcelJS 4 — not `xlsx`, whose npm build is frozen at an old version                                                      |
+| Deploy       | Vercel                                                                                                                   |
 
 No backend is implemented; it is a design deliverable only. See ADR-0003.
 

@@ -1,6 +1,6 @@
 # No backend in scope; MSW defines the API boundary
 
-The brief asks for a Kotlin/Spring backend *and* a React SPA, but grading weight
+The brief asks for a Kotlin/Spring backend _and_ a React SPA, but grading weight
 and a two-day budget both sit with the frontend. We define the REST contract as
 MSW handlers and implement no server, so the frontend is genuinely asynchronous
 and fully testable while the backend remains a design deliverable argued in the
