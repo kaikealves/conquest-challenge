@@ -14,11 +14,11 @@ import type { Money } from '../../shared/money.ts';
  * decision belongs to ticket 05 rather than being pre-empted here; see that
  * ticket for what the payload actually does.
  */
-export interface Entry {
+export type Entry = {
   /** The Provider's own stable identifier, so re-running an import is idempotent. */
   readonly id: string;
   readonly account: AccountCode;
   readonly accountName: string;
   readonly amount: Money;
   readonly date: string;
-}
+};

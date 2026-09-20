@@ -14,13 +14,13 @@ export type CategoryRoot = string;
  * Report. They are genuinely two things — a rule and its result — so they are
  * named apart here; the gap is worth resolving in the Reporting glossary.
  */
-export interface CategoryDefinition {
+export type CategoryDefinition = {
   readonly label: string;
   readonly categoryRoots: readonly CategoryRoot[];
-}
+};
 
 /** An ordered set of Categories defining the shape of a Report. */
-export interface ReportTemplate {
+export type ReportTemplate = {
   readonly name: string;
   readonly categories: readonly CategoryDefinition[];
-}
+};

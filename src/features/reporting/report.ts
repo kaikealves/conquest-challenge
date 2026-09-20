@@ -11,16 +11,16 @@ import type { CategoryDefinition, ReportTemplate } from './reportTemplate.ts';
  * decimal type. The Excel export converts to a real number at that edge, since
  * a spreadsheet cell must hold a number rather than text.
  */
-export interface Category {
+export type Category = {
   readonly label: string;
   readonly total: string;
-}
+};
 
-export interface Report {
+export type Report = {
   readonly template: string;
   readonly currency: Currency;
   readonly categories: readonly Category[];
-}
+};
 
 function matches(account: AccountCode, category: CategoryDefinition): boolean {
   return category.categoryRoots.some((categoryRoot) => account.isUnder(categoryRoot));

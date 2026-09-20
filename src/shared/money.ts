@@ -16,10 +16,10 @@ const MINOR_UNIT_DIGITS: Readonly<Record<string, number>> = { EUR: 2 };
 
 export type Currency = string;
 
-export interface Money {
+export type Money = {
   readonly minorUnits: bigint;
   readonly currency: Currency;
-}
+};
 
 export function minorUnitDigits(currency: Currency): number {
   const digits = MINOR_UNIT_DIGITS[currency];

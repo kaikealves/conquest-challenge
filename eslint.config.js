@@ -24,6 +24,10 @@ export default tseslint.config(
         tsconfigRootDir: import.meta.dirname,
       },
     },
+    rules: {
+      // Object types are written as `type`, never `interface`.
+      '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+    },
   },
   // Config files are JavaScript and sit outside the TypeScript program, so they
   // need their own block or they would be linted under no rules at all.
