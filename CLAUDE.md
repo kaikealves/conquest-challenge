@@ -43,7 +43,14 @@ No backend is implemented; it is a design deliverable only. See ADR-0003.
   fixtures, each named for the case it covers.
 - Tests assert behaviour at the highest seam. There are two: the pipeline
   (Provider payload in, Report out) and the application rendered against MSW.
-- From ticket 03 onward, work on a feature branch and merge via pull request.
+- **Every ticket ships as its own pull request**, starting from ticket 01. One
+  ticket, one branch, one PR.
+- **Never merge a pull request, and never push to `main`.** The user reviews and
+  merges every PR themselves on GitHub. Open the PR, report its URL, and stop
+  there — this applies even when CI is green and even when asked to "finish" a
+  ticket.
+- Do not enable auto-merge, and do not push directly to `main` for any reason,
+  including documentation or configuration changes.
 
 ## Agent skills
 
