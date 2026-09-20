@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Purchases in two different FiscalYears, plus a sale, each balanced against a
+  supplier or customer Account. Purpose: one Category must total only the Entries
+  of the Period it belongs to, while other Entries exist for it to ignore.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <response><result>Success</result></response>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>100.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-08</date><internalID>{ENTRY-1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>100.00</credit><currency>EUR</currency>
+      <date>2016-04-08</date><internalID>{ENTRY-2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>606200</number><name>Petit equipement</name>
+      <debit>50.50</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-02</date><internalID>{ENTRY-3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>50.50</credit><currency>EUR</currency>
+      <date>2016-05-02</date><internalID>{ENTRY-4}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>7.25</debit><credit>0</credit><currency>EUR</currency>
+      <date>2017-01-09</date><internalID>{ENTRY-5}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>7.25</credit><currency>EUR</currency>
+      <date>2017-01-09</date><internalID>{ENTRY-6}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>701000</number><name>Ventes</name>
+      <debit>0</debit><credit>900.00</credit><currency>EUR</currency>
+      <date>2016-05-03</date><internalID>{ENTRY-7}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>411100</number><name>Clients</name>
+      <debit>900.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-03</date><internalID>{ENTRY-8}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

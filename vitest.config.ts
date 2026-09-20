@@ -8,7 +8,7 @@ export default mergeConfig(
     test: {
       environment: 'jsdom',
       setupFiles: ['./vitest.setup.ts'],
-      include: ['src/**/*.test.{ts,tsx}'],
+      include: ['src/**/*.test.{ts,tsx}', 'tools/**/*.test.ts'],
       // End-to-end tests are Playwright's; Vitest must not try to run them.
       exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
       css: true,

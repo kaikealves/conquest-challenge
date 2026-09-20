@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  One Entry carrying a value in both the debit and the credit column. No such row
+  exists in the sample ledger, which is why an importer that picks whichever
+  column is non-zero survives verification against it while silently discarding
+  one side. 120.00 debit less 20.00 credit nets to 100.00.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>120.00</debit><credit>20.00</credit><currency>EUR</currency>
+      <date>2016-04-08</date><internalID>{ENTRY-1}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

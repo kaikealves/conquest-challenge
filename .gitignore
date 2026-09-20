@@ -12,3 +12,8 @@ coverage/
 *.tsbuildinfo
 playwright-report/
 test-results/
+
+# Importer output. Generated from a Provider payload and inheriting its
+# confidentiality — anything built from brief/ is a third party's real
+# accounting data. The deployed site builds this from the synthetic ledger.
+public/data/
