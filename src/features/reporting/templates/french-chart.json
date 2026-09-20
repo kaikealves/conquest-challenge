@@ -1,0 +1,9 @@
+{
+  "name": "French chart of accounts",
+  "categories": [
+    { "label": "Purchases", "roots": ["60", "61", "62"] },
+    { "label": "Staff costs", "roots": ["63", "64"] },
+    { "label": "Sales", "roots": ["70"] },
+    { "label": "Other income", "roots": ["71", "72", "75"] }
+  ]
+}

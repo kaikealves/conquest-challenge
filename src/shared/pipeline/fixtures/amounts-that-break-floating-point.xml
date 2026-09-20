@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  0.10 and 0.20 posted to Accounts under one CategoryRoot. In binary floating
+  point 0.1 + 0.2 is 0.30000000000000004, so this fixture fails the moment an
+  amount passes through a JavaScript number.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>0.10</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-08</date><header>{TXN-1}</header><internalID>{ENTRY-1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>0.10</credit><currency>EUR</currency>
+      <date>2016-04-08</date><header>{TXN-1}</header><internalID>{ENTRY-2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>606200</number><name>Petit equipement</name>
+      <debit>0.20</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-09</date><header>{TXN-2}</header><internalID>{ENTRY-3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>0.20</credit><currency>EUR</currency>
+      <date>2016-04-09</date><header>{TXN-2}</header><internalID>{ENTRY-4}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

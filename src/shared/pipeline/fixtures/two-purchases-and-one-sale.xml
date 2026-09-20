@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Two purchase Entries and one sale, each balanced against a supplier or customer
+  Account. Purpose: the thinnest payload that lets one Category total more than
+  one Entry while other Entries exist for it to ignore.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <response><result>Success</result></response>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>100.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-08</date><header>{TXN-1}</header>
+      <internalID>{ENTRY-1}</internalID><ref>ACH</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>100.00</credit><currency>EUR</currency>
+      <date>2016-04-08</date><header>{TXN-1}</header>
+      <internalID>{ENTRY-2}</internalID><ref>ACH</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>606200</number><name>Petit equipement</name>
+      <debit>50.50</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-02</date><header>{TXN-2}</header>
+      <internalID>{ENTRY-3}</internalID><ref>ACH</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>401100</number><name>Fournisseurs</name>
+      <debit>0</debit><credit>50.50</credit><currency>EUR</currency>
+      <date>2016-05-02</date><header>{TXN-2}</header>
+      <internalID>{ENTRY-4}</internalID><ref>ACH</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>701000</number><name>Ventes</name>
+      <debit>0</debit><credit>900.00</credit><currency>EUR</currency>
+      <date>2016-05-03</date><header>{TXN-3}</header>
+      <internalID>{ENTRY-5}</internalID><ref>VTE</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>411100</number><name>Clients</name>
+      <debit>900.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-03</date><header>{TXN-3}</header>
+      <internalID>{ENTRY-6}</internalID><ref>VTE</ref>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>
