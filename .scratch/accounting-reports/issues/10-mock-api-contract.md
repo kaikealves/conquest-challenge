@@ -51,8 +51,43 @@ gzipped saving ADR-0007 predicted. An end-to-end test asserts no shipped script
 mentions `setupWorker` or `mockServiceWorker`, so it cannot creep back.
 
 Verified against the real ledger: every Category total in every Period matches a
-prefix-sum over the raw XML computed independently with `Decimal`, and every
-parent equals the sum of its children plus its own Accounts.
+prefix-sum over the raw XML computed independently with `Decimal`, every parent
+equals the sum of its children plus its own Accounts, and no Account is listed
+twice anywhere in a Report.
+
+`docs/api-contract.md` is the language-neutral half of the contract — the URL
+table, an example of each payload, and the seven rules a backend must satisfy.
+The TypeScript is for the client; a Kotlin author cannot import it.
+
+### Review fixes
+
+The handler tests asserted the fixture the same module defines: `expect(total)
+.toBe('500.50')` twenty lines below `total: '500.50'` cannot fail for a domain
+reason. They now assert what a client can rely on — status codes, error shape,
+slug-not-name, and the structural invariants the payload promises. Checked by
+moving a fixture total one cent: the invariant test fails.
+
+MSW's worker was still being deployed. `dist/mockServiceWorker.js` shipped at
+9,666 bytes, and the end-to-end test named for its absence only inspected
+scripts the page had loaded, so it passed while the file sat there. The worker
+now lives beside the other mocks and a development-only plugin serves it; `dist`
+is three files. `msw` moved to devDependencies with it.
+
+The API middleware now covers the dev server too. There the API is normally MSW,
+but `main.tsx` deliberately renders when the worker fails to start, which is
+exactly the case that would otherwise hand HTML to a JSON parser. It also
+resolves and checks containment, so a URL carrying `..` cannot ask about a file
+outside the served directory.
+
+Category labels in the handlers now match those
+`tools/importer/templates/french-chart.json` produces. They did not, so every
+test written against them from ticket 11 onward would have asserted Categories
+production never returns. The advertised `uk-chart` was dropped for the same
+reason: no template file backs it, and ticket 25 introduces a second chart
+properly.
+
+`aggregateCategory` took the Accounts claimed by children from the subtrees it
+had just built, rather than matching against every child a second time.
 
 Reshaped by ADR-0007. The contract used to be MSW handlers in every environment;
 it is now the URL shape and payload schema that static files satisfy, with MSW

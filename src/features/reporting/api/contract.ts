@@ -11,8 +11,12 @@
  * Per ADR-0007 these URLs are static JSON in production and MSW handlers in
  * tests and development. Swapping in a real backend is a base-URL change.
  *
+ * `docs/api-contract.md` is the same contract written language-neutrally, with
+ * the rules a backend must satisfy — that document is for the backend author,
+ * this file is for the client.
+ *
  *   GET /data/templates.json
- *     200 → TemplateIndex
+ *     200 → ReportTemplateIndex
  *
  *   GET /data/reports/{templateId}/{period}.json
  *     200 → Report
@@ -26,7 +30,7 @@
  * spreadsheet cell must hold a number rather than text.
  */
 
-export type ReportAccount = {
+export type Account = {
   /** The AccountCode. Variable length; never padded or parsed as a number. */
   readonly code: string;
   readonly name: string;
@@ -43,7 +47,7 @@ export type Category = {
    * The Accounts held directly by this Category — matched by it and by no child,
    * so an Account appears exactly once in the tree and no amount is shown twice.
    */
-  readonly accounts: readonly ReportAccount[];
+  readonly accounts: readonly Account[];
 };
 
 export type Report = {
@@ -56,15 +60,15 @@ export type Report = {
   readonly categories: readonly Category[];
 };
 
-export type TemplateSummary = {
+export type ReportTemplateSummary = {
   readonly id: string;
   readonly name: string;
   /** The Periods this ReportTemplate has a Report for, ascending. */
   readonly periods: readonly string[];
 };
 
-export type TemplateIndex = {
-  readonly templates: readonly TemplateSummary[];
+export type ReportTemplateIndex = {
+  readonly templates: readonly ReportTemplateSummary[];
 };
 
 /** Returned with a 4xx or 5xx, so a client can say what went wrong. */

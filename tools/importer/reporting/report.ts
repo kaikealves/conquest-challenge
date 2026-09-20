@@ -9,7 +9,7 @@ import type { CategoryDefinition, ReportTemplate } from './reportTemplate.ts';
  * decimal type. The Excel export converts to a number at the cell boundary,
  * since a spreadsheet cell must hold a number rather than text.
  */
-export type ReportAccount = {
+export type Account = {
   /** The AccountCode. Variable length; never padded or parsed as a number. */
   readonly code: string;
   readonly name: string;
@@ -24,7 +24,7 @@ export type Category = {
    * The Accounts this Category holds directly — matched by it and by no child,
    * so an Account appears exactly once in the tree.
    */
-  readonly accounts: readonly ReportAccount[];
+  readonly accounts: readonly Account[];
 };
 
 export type Report = {
@@ -91,6 +91,13 @@ type CategoryTotal = {
   readonly accounts: readonly AccountTotal[];
 };
 
+function accountCodesIn(category: CategoryTotal): string[] {
+  return [
+    ...category.accounts.map(({ account }) => account.value),
+    ...category.children.flatMap(accountCodesIn),
+  ];
+}
+
 /**
  * Builds one Category and everything beneath it.
  *
@@ -107,11 +114,10 @@ function aggregateCategory(
   const definedChildren = definition.children ?? [];
   const children = definedChildren.map((child) => aggregateCategory(child, mine, currency));
 
-  const claimedByAChild = new Set(
-    definedChildren.flatMap((child) =>
-      mine.filter((account) => matches(account.account, child)).map(({ account }) => account.value),
-    ),
-  );
+  // Taken from the subtrees just built rather than by matching against each
+  // child again: that repeats work the recursion has done, and it would disagree
+  // with the tree if a child ever placed an Account somewhere unexpected.
+  const claimedByAChild = new Set(children.flatMap(accountCodesIn));
   const direct = mine.filter(({ account }) => !claimedByAChild.has(account.value));
 
   const total = [...children, ...direct].reduce<Money>(
