@@ -11,5 +11,8 @@ translation between them.
 
 - Reporting code never handles an AuxiliaryAccount, so the 580 sub-ledger entries
   in the sample data cannot scatter across 26 meaningless buckets.
-- The two contexts are the two top-level directories under `src/features/`, so
-  the source layout is the context map.
+- ~~The two contexts are the two top-level directories under `src/features/`, so
+  the source layout is the context map.~~ Superseded by
+  [ADR-0006](./0006-importer-is-a-tool-outside-the-application.md): Ledger lives
+  in `tools/importer/` and Reporting's display concerns in `src/`. The split into
+  two contexts, and the rollup between them, still stand.

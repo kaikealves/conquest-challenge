@@ -11,3 +11,14 @@
 - [ ] The deployed application is fully navigable, including expansion and selection
 - [ ] The URL is recorded in the README
 - [ ] Droppable without regret if time runs short
+
+## Comments
+
+Per ADR-0007 the site serves static JSON the importer wrote, so there is no mock
+service worker in production and no server to run. The data deployed is the
+synthetic ledger of ticket 25 — never anything derived from the supplied sample,
+which is a third party's real accounting record.
+
+A request for a Report that does not exist must return 404 rather than the SPA
+shell, or the error and retry states have no real failure to handle. That is a
+rewrite-rule detail worth checking on the deployed site rather than assuming.

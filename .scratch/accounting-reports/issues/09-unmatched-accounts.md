@@ -10,3 +10,9 @@
 - [ ] The unmatched group carries its total so a discrepancy is quantifiable
 - [ ] A Report with a complete ReportTemplate shows an empty unmatched group rather than omitting it
 - [ ] A test proves an amount cannot disappear between the ledger and the Report
+
+## Comments
+
+Moved into `tools/importer/` by ADR-0006, along with the rest of the accounting
+logic. The rule and its test are unchanged; only the location is. Seam 1 is now
+Provider payload in, Report JSON out, from the tool.
