@@ -1,6 +1,6 @@
 import { SaxesParser } from 'saxes';
 
-import { AccountCode } from '../../../shared/accountCode.ts';
+import { accountCode } from '../../../shared/accountCode.ts';
 import { moneyFromDecimal, subtract } from '../../../shared/money.ts';
 import type { Entry } from '../entry.ts';
 
@@ -71,7 +71,7 @@ function amountOf(raw: ProviderEntry): ReturnType<typeof moneyFromDecimal> {
 function toEntry(raw: ProviderEntry): Entry {
   return {
     id: required(raw, 'entryId'),
-    account: AccountCode.of(required(raw, 'accountCode')),
+    account: accountCode(required(raw, 'accountCode')),
     accountName: raw.accountName?.trim() ?? '',
     amount: amountOf(raw),
     date: required(raw, 'date'),

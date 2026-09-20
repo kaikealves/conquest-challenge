@@ -27,6 +27,20 @@ export default tseslint.config(
     rules: {
       // Object types are written as `type`, never `interface`.
       '@typescript-eslint/consistent-type-definitions': ['error', 'type'],
+      // No classes. Behaviour is plain functions over plain data — including
+      // the value objects, where the behaviour lives beside the type rather
+      // than on it. Constructing a class a library owns is still fine.
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'ClassDeclaration',
+          message: 'Use a function and a plain type instead of a class.',
+        },
+        {
+          selector: 'ClassExpression',
+          message: 'Use a function and a plain type instead of a class.',
+        },
+      ],
     },
   },
   // Config files are JavaScript and sit outside the TypeScript program, so they
