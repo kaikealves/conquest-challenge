@@ -22,11 +22,7 @@
     "noFallthroughCasesInSwitch": true,
     "noUncheckedSideEffectImports": true,
     "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-
-    "paths": {
-      "@/*": ["./src/*"]
-    }
+    "exactOptionalPropertyTypes": true
   },
   "include": ["src"]
 }

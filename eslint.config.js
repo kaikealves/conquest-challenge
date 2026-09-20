@@ -25,4 +25,15 @@ export default tseslint.config(
       },
     },
   },
+  // Config files are JavaScript and sit outside the TypeScript program, so they
+  // need their own block or they would be linted under no rules at all.
+  {
+    files: ['**/*.{js,mjs,cjs}'],
+    extends: [js.configs.recommended, prettier],
+    languageOptions: {
+      ecmaVersion: 2022,
+      sourceType: 'module',
+      globals: globals.node,
+    },
+  },
 );
