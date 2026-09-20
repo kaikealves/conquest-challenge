@@ -1,0 +1,6 @@
+# Personal interview-prep notes, not part of the deliverable
+notes/
+
+# Employer-supplied materials: the brief and third-party ledger data.
+# Kept locally, never committed. See README for where to place them.
+brief/
