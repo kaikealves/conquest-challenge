@@ -11,29 +11,30 @@ if (!rootElement) {
 }
 
 /**
- * MSW is the application's only backend, in every environment, per ADR-0003 —
- * not a development-only stand-in for a real service. Rendering waits for the
- * worker so that no request is made before the backend answering it exists.
+ * In development the API is MSW, so a contributor can work without running the
+ * importer first and can reach the failure cases on demand. In production the
+ * same URLs are static JSON the importer wrote, per ADR-0007.
  *
- * `onUnhandledRequest: 'warn'` rather than 'bypass': a request to a path no
- * handler claims has no real server to fall through to, so it would be served
- * `index.html` and fail on parsing. A warning names the cause. MSW exempts
- * scripts, styles and other static assets from this, so the console stays quiet
- * in normal use.
+ * The import sits behind `import.meta.env.DEV` so the mock is never in the
+ * bundle a user downloads — MSW's browser build is 158 kB gzipped, larger than
+ * React, and shipping it was what ADR-0007 was written to stop.
  */
-async function startMockBackend(): Promise<void> {
+async function startMockApiInDevelopment(): Promise<void> {
+  if (!import.meta.env.DEV) {
+    return;
+  }
+
   const { worker } = await import('./shared/mocks/browser.ts');
 
   await worker.start({ onUnhandledRequest: 'warn', quiet: true });
 }
 
 try {
-  await startMockBackend();
+  await startMockApiInDevelopment();
 } catch (cause) {
-  // Render anyway. Without the worker every request fails, but a shell that
-  // surfaces those failures beats a blank page that explains nothing; the
-  // user-facing error states arrive with ticket 12.
-  console.error('The mock backend failed to start; requests will not be served.', cause);
+  // A shell that surfaces failing requests beats a blank page explaining
+  // nothing; the user-facing error states arrive with ticket 12.
+  console.error('The development mock API failed to start.', cause);
 }
 
 createRoot(rootElement).render(

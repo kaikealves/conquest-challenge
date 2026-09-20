@@ -17,6 +17,12 @@ export type CategoryRoot = string;
 export type CategoryDefinition = {
   readonly label: string;
   readonly categoryRoots: readonly CategoryRoot[];
+  /**
+   * Nested Categories. A parent's CategoryRoots should span its children's, so
+   * the parent matches everything beneath it; an Account is then placed at the
+   * deepest Category matching it and counted once.
+   */
+  readonly children?: readonly CategoryDefinition[];
 };
 
 export type ReportTemplate = {
