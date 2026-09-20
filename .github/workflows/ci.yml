@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A later push to the same branch makes an in-flight run obsolete. Superseding
+# it keeps the queue honest; runs on main are never cancelled, since those are
+# the ones whose result has to stay visible.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, type-check and test
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          # Vite 8 needs ^20.19 || >=22.12, as package.json records. Pinning the
+          # current LTS means CI also proves the project builds on a newer major
+          # than the one it is developed on.
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Each step below is its own gate, so a failure names which one broke
+      # rather than reporting one opaque red cross. Steps run in ascending order
+      # of cost: a formatting slip should not wait on a browser download.
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run typecheck
+
+      - name: Component tests
+        run: npm test
+
+      - name: Build
+        run: npm run build
+
+      # Browser binaries are large and versioned, so they are cached against the
+      # exact Playwright version rather than the lockfile hash: an unrelated
+      # dependency bump should not force a 100 MB download.
+      - name: Resolve Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Restore cached browsers
+        id: playwright-cache
+        uses: actions/cache@v6
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+
+      - name: Install browsers and system dependencies
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+
+      # The cache holds the browsers but not the apt packages they link against,
+      # so those are installed even on a hit.
+      - name: Install system dependencies
+        if: steps.playwright-cache.outputs.cache-hit == 'true'
+        run: npx playwright install-deps chromium
+
+      - name: End-to-end tests
+        run: npm run test:e2e
+
+      # Without this a failing end-to-end run in CI is undiagnosable: the trace
+      # is the only record of what the browser actually did.
+      - name: Upload Playwright report
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+          # Most failures happen before the browser ever starts, and an
+          # absent report is not itself a problem worth a warning.
+          if-no-files-found: ignore
