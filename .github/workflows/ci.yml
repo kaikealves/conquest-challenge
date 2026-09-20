@@ -5,9 +5,11 @@ on:
     branches: [main]
   pull_request:
 
-# A later push to the same branch makes an in-flight run obsolete. Superseding
-# it keeps the queue honest; runs on main are never cancelled, since those are
-# the ones whose result has to stay visible.
+# New commits on a pull request supersede its in-flight run, which is where
+# almost every run here comes from: work always happens on a branch with a PR
+# open, so a branch push arrives as a `pull_request` synchronize event. Runs on
+# main are never cancelled, since those are the ones whose result has to stay
+# visible.
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
@@ -50,12 +52,23 @@ jobs:
       - name: Component tests
         run: npm test
 
+      # Playwright's webServer builds again before serving, so this compiles
+      # twice per run. That is a few seconds bought for a named step: a broken
+      # build reports as "Build" rather than as a web server that would not
+      # start. The alternative — having webServer serve a prebuilt dist — is
+      # what ticket 02 deliberately moved away from, because it lets a stale
+      # dist be tested by accident.
       - name: Build
         run: npm run build
 
       # Browser binaries are large and versioned, so they are cached against the
       # exact Playwright version rather than the lockfile hash: an unrelated
-      # dependency bump should not force a 100 MB download.
+      # dependency bump should not force a 114 MB download. The key also names
+      # the browsers installed, or adding a second one later would hit this
+      # cache, skip the install and leave it silently missing.
+      #
+      # The cache is only written when the job succeeds, so a branch that keeps
+      # failing end-to-end does re-download each run.
       - name: Resolve Playwright version
         id: playwright
         run: echo "version=$(node -p "require('./node_modules/@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
@@ -65,7 +78,7 @@ jobs:
         uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}
+          key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium
 
       - name: Install browsers and system dependencies
         if: steps.playwright-cache.outputs.cache-hit != 'true'

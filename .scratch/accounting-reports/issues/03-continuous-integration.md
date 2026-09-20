@@ -8,13 +8,16 @@
 
 - [x] A workflow runs lint, type-check, component tests and end-to-end tests on push and on pull request
 - [x] The workflow fails when any one of those fails
-- [x] A green run is visible on the default branch
+- [ ] A green run is visible on the default branch — **only possible after merge**
 - [x] Playwright browsers are cached or installed reliably in the runner
 
 ## Comments
 
 One GitHub Actions workflow, `.github/workflows/ci.yml`, on push to `main` and on
-every pull request. One job, one step per gate, ordered by cost: formatting, lint,
+every pull request. That is narrower than story 42's "every push": a push to a
+branch with no pull request open runs nothing. It is the right shape given the
+one-ticket-one-PR convention, which guarantees every branch has a PR, but the
+gap is real and worth naming rather than glossing. One job, one step per gate, ordered by cost: formatting, lint,
 type-check, component tests, build, then end-to-end. A step failing fails the job,
 and naming each one means a red run says which gate broke rather than showing a
 single opaque cross.
@@ -25,9 +28,18 @@ major than the one it is written on.
 
 Browsers are cached at `~/.cache/ms-playwright`, keyed on the resolved
 `@playwright/test` version rather than the lockfile hash — an unrelated
-dependency bump should not force a 114 MB download. The apt packages the browser
+dependency bump should not force a 114 MB download. The key also names the
+browsers installed, so adding a second browser later cannot hit this cache,
+skip the install and leave it silently missing. The apt packages the browser
 links against are not in that cache, so `install-deps` runs even on a hit;
-without it a cache hit produces a browser that cannot start.
+without it a cache hit produces a browser that cannot start. The cache is only
+written on success, so a branch failing end-to-end re-downloads each run.
+
+`npm run build` duplicates the build Playwright's `webServer` does, so each run
+compiles twice. That buys a named step — a broken build reports as "Build"
+rather than as a web server that would not start — and the alternative, serving
+a prebuilt `dist/`, is what ticket 02 moved away from because it lets a stale
+bundle be tested by accident.
 
 Three defects in the existing harness surfaced while wiring this up, all of them
 things that would only ever have failed in CI:
@@ -49,6 +61,10 @@ The `github` reporter is enabled under CI so failures annotate the diff, and the
 read afterwards. Ticket 02 removed both of these as premature; this is the ticket
 that owns them.
 
-Verified by running the exact step sequence against a clean clone with `CI=true`,
-and by the workflow's own run on the pull request. The green run on `main`
-follows the merge, since that is the only way a default-branch run can exist.
+Verified by replaying the exact step sequence against a clean clone with
+`CI=true`, and by the workflow's own run on the pull request.
+
+The third criterion is left unticked deliberately. A run on the default branch
+cannot exist until something lands on it, so nothing done on this branch can
+satisfy it; the evidence available before merge is the pull request's own run,
+and the `main` run follows the merge. Tick it then, not now.
