@@ -64,6 +64,17 @@ that owns them.
 Verified by replaying the exact step sequence against a clean clone with
 `CI=true`, and by the workflow's own run on the pull request.
 
+The pull request's run is green end to end
+(https://github.com/kaikealves/conquest-challenge/actions/runs/35531937188): every
+gate passed, the cache missed and took the `--with-deps` install, and the
+hit-only `install-deps` step skipped as designed.
+
+Two paths remain unexercised in CI, both only reachable from a red run: the
+artifact upload, and `install-deps` on a cache hit. The upload was proven locally
+by failing a test on purpose; the cache-hit branch will first run on the next
+pull request after this merges, since a cache written on `main` is what PR runs
+restore from.
+
 The third criterion is left unticked deliberately. A run on the default branch
 cannot exist until something lands on it, so nothing done on this branch can
 satisfy it; the evidence available before merge is the pull request's own run,
