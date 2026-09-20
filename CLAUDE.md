@@ -12,4 +12,4 @@ The five canonical triage roles, used verbatim as label strings. See `docs/agent
 
 ### Domain docs
 
-Single-context: `CONTEXT.md` and `docs/adr/` at the repo root. See `docs/agents/domain.md`.
+Multi-context: `CONTEXT-MAP.md` at the root points to one `CONTEXT.md` per bounded context under `src/features/`. ADRs live in `docs/adr/`. See `docs/agents/domain.md`.
