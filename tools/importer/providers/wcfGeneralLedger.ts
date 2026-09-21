@@ -23,6 +23,7 @@ const PROVIDER_ENTRY_ELEMENT = 'wsGeneralLedger';
 const PROVIDER_FIELDS = {
   accountCode: 'number',
   accountName: 'name',
+  controlAccount: 'collectif',
   debit: 'debit',
   credit: 'credit',
   currency: 'currency',
@@ -72,9 +73,15 @@ function required(raw: ProviderEntry, field: ProviderField): string {
 function toEntry(raw: ProviderEntry): Entry {
   const currency = required(raw, 'currency');
 
+  // An Account this Provider ties to a collective one says so in <collectif>,
+  // empty on an ordinary Account. Taken from that field and never guessed from
+  // the shape of the code, which is only a convention.
+  const control = raw.controlAccount?.trim() ?? '';
+
   return {
     id: required(raw, 'entryId'),
     account: accountCode(required(raw, 'accountCode')),
+    ...(control === '' ? {} : { controlAccount: accountCode(control) }),
     accountName: raw.accountName?.trim() ?? '',
     amount: subtract(
       moneyFromDecimal(raw.debit ?? '0', currency),

@@ -1,5 +1,5 @@
 import { isUnder, type AccountCode } from '../domain/accountCode.ts';
-import type { Entry } from '../domain/entry.ts';
+import { reportedAccount, reportedAccountName, type Entry } from '../domain/entry.ts';
 import { add, moneyToDecimal, subtract, zero, type Currency, type Money } from '../domain/money.ts';
 import type {
   CategoryDefinition,
@@ -76,11 +76,14 @@ export async function totalByAccountAndPeriod(
   for await (const entry of entries) {
     const period = periodOf(entry);
     const totals = periods.get(period) ?? new Map<string, AccountTotal>();
-    const before = totals.get(entry.account.value);
+    const account = reportedAccount(entry);
+    const before = totals.get(account.value);
 
-    totals.set(entry.account.value, {
-      account: entry.account,
-      name: entry.accountName,
+    totals.set(account.value, {
+      account,
+      // Keep the first name seen: a blank one (a rolled-up Account) must not
+      // overwrite a real one from an Entry posted directly.
+      name: before?.name || reportedAccountName(entry),
       total: add(before?.total ?? zero(currency), entry.amount),
       opening: entry.openingBalance
         ? add(before?.opening ?? zero(currency), entry.amount)

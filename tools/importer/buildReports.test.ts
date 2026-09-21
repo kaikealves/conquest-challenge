@@ -4,6 +4,7 @@ import accountsAcrossNestedCategories from './fixtures/accounts-across-nested-ca
 import amountsBeyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import amountsThatBreakFloatingPoint from './fixtures/amounts-that-break-floating-point.xml?raw';
 import anEntryCarryingBothColumns from './fixtures/an-entry-carrying-both-columns.xml?raw';
+import customerAndSupplierAuxiliaryAccounts from './fixtures/customer-and-supplier-auxiliary-accounts.xml?raw';
 import journalsThatOnlyLookLikeOpeningBalances from './fixtures/journals-that-only-look-like-opening-balances.xml?raw';
 import openingBalanceAndOrdinaryEntries from './fixtures/opening-balance-and-ordinary-entries.xml?raw';
 import purchasesAcrossTwoFiscalYears from './fixtures/purchases-across-two-fiscal-years.xml?raw';
@@ -189,4 +190,68 @@ test('the Result lists the revenue and expense Accounts it is made of', async ()
   expect(report?.categories.at(-1)?.accounts).toEqual([
     { code: '706000', name: 'Prestations de services', total: '-250.00' },
   ]);
+});
+
+const partiesAndBank: ReportTemplate = {
+  id: 'parties-and-bank',
+  name: 'Customers, suppliers and the bank',
+  kind: 'BalanceSheet',
+  categories: [
+    { label: 'Customers', categoryRoots: ['411'] },
+    { label: 'Suppliers', categoryRoots: ['401'] },
+    { label: 'Bank', categoryRoots: ['512'] },
+  ],
+};
+
+async function partiesReport() {
+  const [report] = await buildReports(
+    inChunks(customerAndSupplierAuxiliaryAccounts),
+    partiesAndBank,
+  );
+
+  return report;
+}
+
+test('Entries on each customer’s own Account are reported under the customers’ ControlAccount', async () => {
+  const report = await partiesReport();
+  const customers = report?.categories.find((category) => category.label === 'Customers');
+
+  // 100.00 for one customer and 50.00 for the other, on one line.
+  expect(customers?.total).toBe('150.00');
+  expect(customers?.accounts.map((account) => [account.code, account.total])).toEqual([
+    ['411100', '150.00'],
+  ]);
+});
+
+test('the same holds on the supplier side, where the balance is a credit', async () => {
+  const report = await partiesReport();
+  const suppliers = report?.categories.find((category) => category.label === 'Suppliers');
+
+  expect(suppliers?.total).toBe('-80.00');
+  expect(suppliers?.accounts.map((account) => [account.code, account.total])).toEqual([
+    ['401100', '-80.00'],
+  ]);
+});
+
+test('no AuxiliaryAccount appears anywhere in a Report', async () => {
+  // A template that matches every code the fixture has, so an AuxiliaryAccount
+  // would be reported if it survived: an unmatched one is dropped and proves
+  // nothing.
+  const [report] = await buildReports(inChunks(customerAndSupplierAuxiliaryAccounts), {
+    ...partiesAndBank,
+    categories: [{ label: 'Everything', categoryRoots: ['0', '4', '5', '9'] }],
+  });
+  const everything = JSON.stringify(report);
+
+  for (const auxiliary of ['0ACME', '0BOLT', '9ELEC', 'Acme', 'Bolt', 'Electricite']) {
+    expect(everything).not.toContain(auxiliary);
+  }
+  expect(report?.categories[0]?.total).toBe('80.00');
+});
+
+test('an Entry posted straight to a Chart of Accounts Account is unaffected', async () => {
+  const report = await partiesReport();
+  const bank = report?.categories.find((category) => category.label === 'Bank');
+
+  expect(bank?.accounts).toEqual([{ code: '512000', name: 'Banque', total: '10.00' }]);
 });
