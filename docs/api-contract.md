@@ -48,14 +48,17 @@ a network tab, not for display.
    excludes them. The payload does not say which kind a Report is; a client has
    no arithmetic to do that would need it.
 
-9. **A Report accounts for every Account, in `unmatched` if nowhere else.**
-   `unmatched` is always present and shaped as a Category with no children. It
-   holds the Accounts no Category (and not the Result) claimed, with their
-   total. A ReportTemplate that covers everything sends it empty, with total
-   `0.00`; it is never omitted, because an absent group would be
-   indistinguishable from a Report that never checked. Summing the top-level
-   Categories and `unmatched` gives the whole ledger's net for the Period, so
-   nothing is lost between the ledger and the Report.
+9. **A Report accounts for every Account its ReportTemplate answers for, in
+   `unmatched` if nowhere else.** `unmatched` is always present and shaped as a
+   Category with no children. It holds the Accounts within the template's scope
+   that no Category (and not the Result) claimed, with their total. A template
+   that covers everything sends it empty, with total `0.00`; it is never
+   omitted, because an absent group would be indistinguishable from a Report
+   that never checked. Summing the top-level Categories and `unmatched` gives
+   the net of the Accounts in scope for the Period, so nothing the template is
+   responsible for is lost between the ledger and the Report. A ProfitAndLoss's
+   scope is revenue and expense Accounts, so its balance-sheet Accounts are out
+   of scope, not unmatched. A payload without `unmatched` is not a valid Report.
 
 ## ReportTemplateIndex
 

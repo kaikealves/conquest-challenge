@@ -11,3 +11,7 @@
 - [ ] Amounts export as numbers, not formatted text, so they can be computed with
 - [ ] The export reflects the ReportTemplate and Period currently displayed
 - [ ] Export runs client-side from the Report already in memory
+
+## Added by ticket 09
+
+A Report's `unmatched` group is a sibling of `categories`, not inside it, so an export that walks `categories` alone silently drops it: the loss ticket 09 exists to prevent. The export must include it, empty or not. The Result stays an ordinary Category.

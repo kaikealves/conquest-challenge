@@ -20,7 +20,7 @@ Provider payload in, Report JSON out, from the tool.
 
 ## Delivered, with scope added
 
-- An Entry carries `openingBalance`, set by the Provider translator: this Provider's journal `ref` equal to `AN`. Verified on the sample: 750 Entries, all dated 1 January, only balance-sheet Accounts, and each FiscalYear's set nets to zero.
+- An Entry carries `openingBalance`, set by the Provider translator: this Provider's journal `ref` equal to `AN`. Verified locally on the sample: such Entries are all dated 1 January, sit only on balance-sheet Accounts, and each FiscalYear's set nets to zero.
 - A ReportTemplate declares its `kind` (BalanceSheet or ProfitAndLoss); a template without one is refused.
 - A BalanceSheet template may declare a `result`: revenue and expense Accounts summed into one Category, so the BalanceSheet's Categories net to zero.
 - **Added to the ticket:** the two ReportTemplates the real ledger needed, `french-profit-and-loss` and `french-balance-sheet` (renamed from `french-chart`).

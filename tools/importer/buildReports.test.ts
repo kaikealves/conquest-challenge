@@ -457,7 +457,10 @@ const fixtures = {
  * What the ledger says each Period nets to, read straight off the payload with
  * no help from the importer: an independent oracle for "nothing was lost".
  */
-function netByPeriod(payload: string): Map<string, bigint> {
+function netByPeriod(
+  payload: string,
+  onlyCodes: (code: string) => boolean = () => true,
+): Map<string, bigint> {
   const cents = (text: string) => {
     const [whole = '0', fraction = ''] = text.split('.');
 
@@ -471,6 +474,10 @@ function netByPeriod(payload: string): Map<string, bigint> {
     const field = (name: string) =>
       new RegExp(`<${name}>([^<]*)</${name}>`).exec(entry)?.[1] ?? '0';
     const period = field('date').slice(0, 4);
+
+    if (!onlyCodes(field('number'))) {
+      continue;
+    }
 
     net.set(period, (net.get(period) ?? 0n) + cents(field('debit')) - cents(field('credit')));
   }
@@ -560,4 +567,44 @@ test('an Account inside the scope that no Category claimed is still unmatched', 
 
   // 641000 and 645000 are in scope (class 6) and under no Category.
   expect(report?.unmatched.accounts.map((account) => account.code)).toEqual(['641000', '645000']);
+});
+
+test('nothing in scope disappears from a scoped ProfitAndLoss either', async () => {
+  for (const [name, payload] of Object.entries(fixtures)) {
+    const reports = await buildReports(inChunks(payload), {
+      ...matchesNothingButPurchases,
+      kind: 'ProfitAndLoss',
+      scope: ['6', '7'],
+    });
+
+    for (const report of reports) {
+      const inReport = [...report.categories, report.unmatched].reduce(
+        (sum, category) => sum + toCents(category.total),
+        0n,
+      );
+
+      // The oracle: revenue and expense Accounts' net, straight off the payload.
+      expect(inReport, `${name}, ${report.period}`).toBe(
+        netByPeriod(payload, (code) => code.startsWith('6') || code.startsWith('7')).get(
+          report.period,
+        ) ?? 0n,
+      );
+    }
+  }
+});
+
+test('nothing disappears from a BalanceSheet with a Result and a scope', async () => {
+  const reports = await buildReports(inChunks(openingBalanceAndOrdinaryEntries), {
+    ...balanceSheet,
+    scope: ['1', '2', '3', '4', '5'],
+  });
+
+  for (const report of reports) {
+    const inReport = [...report.categories, report.unmatched].reduce(
+      (sum, category) => sum + toCents(category.total),
+      0n,
+    );
+
+    expect(inReport).toBe(netByPeriod(openingBalanceAndOrdinaryEntries).get(report.period));
+  }
 });
