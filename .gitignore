@@ -17,3 +17,6 @@ test-results/
 # confidentiality — anything built from brief/ is a third party's real
 # accounting data. The deployed site builds this from the synthetic ledger.
 public/data/
+
+# Real-ledger mode output (`npm run dev:real`). Same confidentiality as brief/.
+.local/

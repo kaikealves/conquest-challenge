@@ -58,7 +58,7 @@ test('the index lists each ReportTemplate with the Periods it has Reports for', 
 });
 
 test('a Report carries its Categories, their children and the Accounts within them', async () => {
-  const report = (await (await get(reportUrl('french-chart', '2016'))).json()) as Report;
+  const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
   const categories = everyCategory(report.categories);
 
   expect(categories.length).toBeGreaterThan(report.categories.length);
@@ -76,7 +76,7 @@ test('a Report carries its Categories, their children and the Accounts within th
 });
 
 test("a Category's total is its children plus the Accounts it holds directly", async () => {
-  const report = (await (await get(reportUrl('french-chart', '2016'))).json()) as Report;
+  const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
 
   for (const category of everyCategory(report.categories)) {
     if (category.children.length === 0 && category.accounts.length === 0) continue;
@@ -86,7 +86,7 @@ test("a Category's total is its children plus the Accounts it holds directly", a
 });
 
 test('an Account appears exactly once across the whole Report', async () => {
-  const report = (await (await get(reportUrl('french-chart', '2016'))).json()) as Report;
+  const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
   const codes = everyCategory(report.categories).flatMap((category) =>
     category.accounts.map((account) => account.code),
   );
@@ -95,12 +95,12 @@ test('an Account appears exactly once across the whole Report', async () => {
 });
 
 test('a ReportTemplate is addressed by its slug, not its display name', async () => {
-  expect((await get(reportUrl('french-chart', '2016'))).status).toBe(200);
-  expect((await get(reportUrl('French chart of accounts', '2016'))).status).toBe(404);
+  expect((await get(reportUrl('french-profit-and-loss', '2016'))).status).toBe(200);
+  expect((await get(reportUrl('Profit and loss', '2016'))).status).toBe(404);
 });
 
 test('a Report that does not exist answers 404 with a reason naming what was asked for', async () => {
-  const response = await get(reportUrl('french-chart', '1066'));
+  const response = await get(reportUrl('french-profit-and-loss', '1066'));
 
   expect(response.status).toBe(404);
   expect(((await response.json()) as ApiError).message).toContain('1066');
@@ -111,8 +111,19 @@ test('an unknown ReportTemplate answers 404 rather than an empty Report', async 
 });
 
 test('a Report that cannot be produced answers 500, so retry has something to retry', async () => {
-  const response = await get(reportUrl('french-chart', PERIOD_THAT_FAILS));
+  const response = await get(reportUrl('french-profit-and-loss', PERIOD_THAT_FAILS));
 
   expect(response.status).toBe(500);
   expect(((await response.json()) as ApiError).message).not.toBe('');
+});
+
+test('a BalanceSheet’s Categories net to zero, Result included', async () => {
+  const report = (await (await get(reportUrl('french-balance-sheet', '2016'))).json()) as Report;
+  const cents = report.categories.reduce(
+    (sum, category) => sum + Math.round(Number(category.total) * 100),
+    0,
+  );
+
+  expect(report.categories.map((category) => category.label)).toContain('Result');
+  expect(cents).toBe(0);
 });

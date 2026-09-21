@@ -1,6 +1,7 @@
 {
-  "id": "french-chart",
-  "name": "French chart of accounts",
+  "id": "french-profit-and-loss",
+  "name": "Profit and loss",
+  "kind": "ProfitAndLoss",
   "categories": [
     {
       "label": "Operating expenses",

@@ -6,8 +6,8 @@ import { expect, test } from '@playwright/test';
  * or a backend would answer, at the same URL.
  */
 const report = {
-  templateId: 'french-chart',
-  templateName: 'French chart of accounts',
+  templateId: 'french-profit-and-loss',
+  templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
   categories: [
@@ -33,7 +33,9 @@ const report = {
 test('expanding a Category down to its Accounts, and collapsing it again', async ({ page }) => {
   await page.route('**/data/templates.json', (route) =>
     route.fulfill({
-      json: { templates: [{ id: 'french-chart', name: report.templateName, periods: ['2016'] }] },
+      json: {
+        templates: [{ id: 'french-profit-and-loss', name: report.templateName, periods: ['2016'] }],
+      },
     }),
   );
   await page.route('**/data/reports/**', (route) => route.fulfill({ json: report }));

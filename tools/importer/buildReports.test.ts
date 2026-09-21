@@ -4,6 +4,8 @@ import accountsAcrossNestedCategories from './fixtures/accounts-across-nested-ca
 import amountsBeyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import amountsThatBreakFloatingPoint from './fixtures/amounts-that-break-floating-point.xml?raw';
 import anEntryCarryingBothColumns from './fixtures/an-entry-carrying-both-columns.xml?raw';
+import journalsThatOnlyLookLikeOpeningBalances from './fixtures/journals-that-only-look-like-opening-balances.xml?raw';
+import openingBalanceAndOrdinaryEntries from './fixtures/opening-balance-and-ordinary-entries.xml?raw';
 import purchasesAcrossTwoFiscalYears from './fixtures/purchases-across-two-fiscal-years.xml?raw';
 import { buildReports } from './buildReports.ts';
 import type { ReportTemplate } from './reporting/reportTemplate.ts';
@@ -31,6 +33,7 @@ async function* inChunks(payload: string, size = 64): AsyncIterable<string> {
 const purchases: ReportTemplate = {
   id: 'purchases',
   name: 'Purchases only',
+  kind: 'ProfitAndLoss',
   categories: [{ label: 'Purchases', categoryRoots: ['606'] }],
 };
 
@@ -81,6 +84,7 @@ test('amounts stay exact beyond the range a float can count cents in', async () 
 const operatingExpenses: ReportTemplate = {
   id: 'operating-expenses',
   name: 'Operating expenses',
+  kind: 'ProfitAndLoss',
   categories: [
     {
       label: 'Operating expenses',
@@ -115,5 +119,74 @@ test('an Account is listed once, at the deepest Category that matches it', async
   expect(parent?.children[0]?.accounts).toEqual([
     { code: '606100', name: 'Fournitures', total: '100.00' },
     { code: '613200', name: 'Locations', total: '25.00' },
+  ]);
+});
+
+const bank = { label: 'Bank', categoryRoots: ['512'] };
+
+const balanceSheet: ReportTemplate = {
+  id: 'balance-sheet',
+  name: 'Balance sheet',
+  kind: 'BalanceSheet',
+  categories: [
+    { label: 'Assets', categoryRoots: ['5'], children: [bank] },
+    { label: 'Equity', categoryRoots: ['1'] },
+  ],
+  result: { label: 'Result', categoryRoots: ['6', '7'] },
+};
+
+const profitAndLossOverTheBank: ReportTemplate = {
+  id: 'profit-and-loss-over-the-bank',
+  name: 'A ProfitAndLoss whose CategoryRoot also matches a balance-sheet Account',
+  kind: 'ProfitAndLoss',
+  // A real ProfitAndLoss never names a balance-sheet Account. This one does, so
+  // the carried-forward balance has somewhere to wrongly appear.
+  categories: [bank],
+};
+
+async function only(template: ReportTemplate) {
+  const [report] = await buildReports(inChunks(openingBalanceAndOrdinaryEntries), template);
+
+  return report;
+}
+
+test('a BalanceSheet includes the balance carried forward from the year before', async () => {
+  const report = await only(balanceSheet);
+
+  // 1000.00 carried forward plus the 250.00 received this year.
+  expect(report?.categories[0]?.children[0]?.total).toBe('1250.00');
+});
+
+test('a ProfitAndLoss leaves out the balance carried forward', async () => {
+  const report = await only(profitAndLossOverTheBank);
+
+  // Only the 250.00 that happened this year.
+  expect(report?.categories[0]?.total).toBe('250.00');
+});
+
+test('the BalanceSheet balances once the Result is counted', async () => {
+  const report = await only(balanceSheet);
+  const totals = Object.fromEntries(report?.categories.map((c) => [c.label, c.total]) ?? []);
+
+  expect(totals).toEqual({ Assets: '1250.00', Equity: '-1000.00', Result: '-250.00' });
+  // Assets are debits (positive), Equity and the Result credits (negative), so
+  // a BalanceSheet that balances nets to zero.
+  expect(report?.categories.reduce((sum, category) => sum + Number(category.total), 0)).toBe(0);
+});
+
+test('a journal code that only resembles the carried-forward one is not left out', async () => {
+  const [report] = await buildReports(
+    inChunks(journalsThatOnlyLookLikeOpeningBalances),
+    profitAndLossOverTheBank,
+  );
+
+  expect(report?.categories[0]?.total).toBe('12.00');
+});
+
+test('the Result lists the revenue and expense Accounts it is made of', async () => {
+  const report = await only(balanceSheet);
+
+  expect(report?.categories.at(-1)?.accounts).toEqual([
+    { code: '706000', name: 'Prestations de services', total: '-250.00' },
   ]);
 });

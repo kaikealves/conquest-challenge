@@ -44,8 +44,8 @@ function respondWith(status: number, body: Record<string, unknown>) {
 }
 
 const aReportWith = (categories: unknown[]) => ({
-  templateId: 'french-chart',
-  templateName: 'French chart of accounts',
+  templateId: 'french-profit-and-loss',
+  templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
   categories,
@@ -59,7 +59,7 @@ test('a Report in flight says so, and stops saying so once it arrives', async ()
   // The Report screen alone: rendered through the application, the list of
   // ReportTemplates loads first and the Report's own loading state is not there
   // to observe on the first render.
-  renderScreen('french-chart', '2016');
+  renderScreen('french-profit-and-loss', '2016');
 
   expect(screen.getByText('Loading the Report…')).toBeVisible();
 
@@ -68,7 +68,7 @@ test('a Report in flight says so, and stops saying so once it arrives', async ()
 });
 
 test('each state is announced to a reader who cannot see the screen', async () => {
-  renderScreen('french-chart', '2016');
+  renderScreen('french-profit-and-loss', '2016');
 
   // One live region, mounted before its content changes, so every transition is
   // announced — including the Report arriving, which nothing else marks.
@@ -117,7 +117,7 @@ test('retrying a failed request loads the Report, without reloading the page', a
 });
 
 test('changing the Period never shows the previous Period’s Report', async () => {
-  const { changePeriodTo } = renderScreen('french-chart', '2016');
+  const { changePeriodTo } = renderScreen('french-profit-and-loss', '2016');
 
   // 2016 and 2015 carry different figures in the fixtures, so the old total is
   // a thing that can be looked for and must not be there.
@@ -158,8 +158,8 @@ test('two views of the same Report make one request, not two', async () => {
 
   render(
     <QueryClientProvider client={queryClient}>
-      <ReportScreen templateId="french-chart" period="2016" />
-      <ReportScreen templateId="french-chart" period="2016" />
+      <ReportScreen templateId="french-profit-and-loss" period="2016" />
+      <ReportScreen templateId="french-profit-and-loss" period="2016" />
     </QueryClientProvider>,
   );
 

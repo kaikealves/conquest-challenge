@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Two Entries on one balance-sheet Account, in journals whose codes merely
+  contain the letters AN: one starting with them, one ending with them.
+
+  Purpose: only the carried-forward journal itself marks an OpeningBalance, so
+  neither of these is left out of a ProfitAndLoss.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>5.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-02-01</date><internalID>{J1}</internalID><ref>ANNUAL</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>7.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-02-02</date><internalID>{J2}</internalID><ref>BAN</ref>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

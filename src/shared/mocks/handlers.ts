@@ -14,20 +14,20 @@ import {
  * Per ADR-0007 these run in tests and development only; production fetches the
  * same URLs as static JSON the importer wrote. So these must answer with shapes
  * those files actually have — the Category labels below are the ones
- * `tools/importer/templates/french-chart.json` produces, not invented ones, or
+ * `tools/importer/templates/french-profit-and-loss.json` produces, not invented ones, or
  * every test written against them from ticket 11 onward would assert Categories
  * production never returns.
  */
 
 const templates: ReportTemplateIndex = {
   templates: [
-    { id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] },
-    { id: 'balance-sheet', name: 'Balance sheet', periods: ['2015', '2016'] },
+    { id: 'french-profit-and-loss', name: 'Profit and loss', periods: ['2015', '2016'] },
+    { id: 'french-balance-sheet', name: 'Balance sheet', periods: ['2015', '2016'] },
   ],
 };
 
 /**
- * The Category labels are the ones `tools/importer/templates/french-chart.json`
+ * The Category labels are the ones `tools/importer/templates/french-profit-and-loss.json`
  * produces — all three parents, so a test cannot pass while the application
  * silently drops one.
  *
@@ -114,8 +114,8 @@ function categoriesFor(scale: number): Report['categories'] {
 
 function reportFor(period: string, scale: number): Report {
   return {
-    templateId: 'french-chart',
-    templateName: 'French chart of accounts',
+    templateId: 'french-profit-and-loss',
+    templateName: 'Profit and loss',
     period,
     currency: 'EUR',
     categories: categoriesFor(scale),
@@ -124,10 +124,11 @@ function reportFor(period: string, scale: number): Report {
 
 /**
  * A second ReportTemplate, so a test can tell one Report from another by what
- * is on screen. Its Categories are invented, like every figure in this file.
+ * is on screen. Its Categories are the ones `french-balance-sheet.json` produces
+ * and its figures are invented; they net to zero, as a BalanceSheet's do.
  */
 const balanceSheetFor = (period: string): Report => ({
-  templateId: 'balance-sheet',
+  templateId: 'french-balance-sheet',
   templateName: 'Balance sheet',
   period,
   currency: 'EUR',
@@ -135,23 +136,43 @@ const balanceSheetFor = (period: string): Report => ({
     {
       label: 'Assets',
       total: '5000.00',
-      accounts: [{ code: '512000', name: 'Banque', total: '5000.00' }],
-      children: [],
+      accounts: [],
+      children: [
+        {
+          label: 'Cash and banks',
+          total: '5000.00',
+          children: [],
+          accounts: [{ code: '512000', name: 'Banque', total: '5000.00' }],
+        },
+      ],
     },
     {
-      label: 'Liabilities',
-      total: '-5000.00',
-      accounts: [{ code: '401000', name: 'Fournisseurs', total: '-5000.00' }],
+      label: 'Equity and liabilities',
+      total: '-4000.00',
+      accounts: [],
+      children: [
+        {
+          label: 'Suppliers',
+          total: '-4000.00',
+          children: [],
+          accounts: [{ code: '401000', name: 'Fournisseurs', total: '-4000.00' }],
+        },
+      ],
+    },
+    {
+      label: 'Result',
+      total: '-1000.00',
       children: [],
+      accounts: [{ code: '706000', name: 'Prestations de services', total: '-1000.00' }],
     },
   ],
 });
 
 const reports = new Map<string, Report>([
-  ['balance-sheet/2016', balanceSheetFor('2016')],
-  ['balance-sheet/2015', balanceSheetFor('2015')],
-  ['french-chart/2016', reportFor('2016', 1)],
-  ['french-chart/2015', reportFor('2015', 2)],
+  ['french-balance-sheet/2016', balanceSheetFor('2016')],
+  ['french-balance-sheet/2015', balanceSheetFor('2015')],
+  ['french-profit-and-loss/2016', reportFor('2016', 1)],
+  ['french-profit-and-loss/2015', reportFor('2015', 2)],
 ]);
 
 /**

@@ -28,6 +28,7 @@ const PROVIDER_FIELDS = {
   currency: 'currency',
   date: 'date',
   entryId: 'internalID',
+  journal: 'ref',
 } as const;
 
 type ProviderField = keyof typeof PROVIDER_FIELDS;
@@ -39,6 +40,15 @@ const FIELD_BY_PROVIDER_NAME = new Map<string, ProviderField>(
     field as ProviderField,
   ]),
 );
+
+/**
+ * This Provider files carried-forward balances in a journal whose code is `AN`
+ * ("à nouveau"). The sample confirms it: every
+ * such Entry is dated the first of January, sits on a balance-sheet Account, and
+ * each FiscalYear's set nets to zero. The match is exact so a journal that merely
+ * begins with the same letters is not taken for one.
+ */
+const OPENING_BALANCE_JOURNAL = /^AN$/;
 
 function required(raw: ProviderEntry, field: ProviderField): string {
   const value = raw[field]?.trim();
@@ -71,6 +81,7 @@ function toEntry(raw: ProviderEntry): Entry {
       moneyFromDecimal(raw.credit ?? '0', currency),
     ),
     date: required(raw, 'date'),
+    openingBalance: OPENING_BALANCE_JOURNAL.test(raw.journal?.trim() ?? ''),
   };
 }
 

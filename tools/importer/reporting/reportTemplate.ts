@@ -25,6 +25,26 @@ export type CategoryDefinition = {
   readonly children?: readonly CategoryDefinition[];
 };
 
+/**
+ * The two kinds of Report, which differ in how they treat a carried-forward
+ * balance: a BalanceSheet is a position at the end of a Period, so it includes
+ * OpeningBalance Entries; a ProfitAndLoss is what happened during it, so it
+ * excludes them and each FiscalYear's Result reflects only that year.
+ */
+export type ReportKind = 'BalanceSheet' | 'ProfitAndLoss';
+
+/**
+ * A Category computed from the ProfitAndLoss Accounts of the same Period rather
+ * than read off the chart: the Result, which is what makes a BalanceSheet
+ * balance. It has no children and lists the revenue and expense Accounts it is
+ * made of, so its total is still the sum of what is beneath it.
+ */
+export type ResultDefinition = {
+  readonly label: string;
+  /** The revenue and expense Accounts whose net is the Result. */
+  readonly categoryRoots: readonly CategoryRoot[];
+};
+
 export type ReportTemplate = {
   /**
    * Stable identifier, used in the URL. Separate from `name` so that renaming a
@@ -32,5 +52,11 @@ export type ReportTemplate = {
    */
   readonly id: string;
   readonly name: string;
+  readonly kind: ReportKind;
   readonly categories: readonly CategoryDefinition[];
+  /**
+   * Appended after the Categories when present. A BalanceSheet carries one so its
+   * Categories net to zero; a ProfitAndLoss has no use for it.
+   */
+  readonly result?: ResultDefinition;
 };

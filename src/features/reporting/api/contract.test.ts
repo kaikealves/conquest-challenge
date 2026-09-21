@@ -24,6 +24,7 @@ async function* inChunks(payload: string, size = 64): AsyncIterable<string> {
 const template: ReportTemplate = {
   id: 'operating-expenses',
   name: 'Operating expenses',
+  kind: 'ProfitAndLoss',
   categories: [
     {
       label: 'Operating expenses',

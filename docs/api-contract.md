@@ -39,12 +39,21 @@ a network tab, not for display.
    ControlAccount before aggregation; see
    [ADR-0001](./adr/0001-ledger-and-reporting-bounded-contexts.md).
 
+8. **A BalanceSheet nets to zero, Result included.** Its last top-level
+   Category is `Result`: the net of the revenue and expense Accounts, in ledger
+   sign (a profit is a credit, so negative). Unlike other Categories it holds
+   revenue and expense Accounts directly and has no children, so a client must
+   not assume every Account is a balance-sheet one. A BalanceSheet includes
+   balances carried forward from the previous FiscalYear; a ProfitAndLoss
+   excludes them. The payload does not say which kind a Report is; a client has
+   no arithmetic to do that would need it.
+
 ## ReportTemplateIndex
 
 ```json
 {
   "templates": [
-    { "id": "french-chart", "name": "French chart of accounts", "periods": ["2015", "2016"] }
+    { "id": "french-profit-and-loss", "name": "Profit and loss", "periods": ["2015", "2016"] }
   ]
 }
 ```
@@ -59,8 +68,8 @@ a network tab, not for display.
 
 ```json
 {
-  "templateId": "french-chart",
-  "templateName": "French chart of accounts",
+  "templateId": "french-profit-and-loss",
+  "templateName": "Profit and loss",
   "period": "2016",
   "currency": "EUR",
   "categories": [
