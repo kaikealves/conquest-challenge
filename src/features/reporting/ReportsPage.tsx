@@ -1,21 +1,30 @@
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 
 import { useTemplates } from './api/useTemplates.ts';
+import { PeriodChooser } from './components/PeriodChooser.tsx';
 import { TemplateChooser } from './components/TemplateChooser.tsx';
 import { ReportScreen } from './ReportScreen.tsx';
 
-const reportPath = (templateId: string) => `/reports/${encodeURIComponent(templateId)}`;
+const templatePath = (templateId: string) => `/reports/${encodeURIComponent(templateId)}`;
+
+const reportPath = (templateId: string, period: string) =>
+  `${templatePath(templateId)}/${encodeURIComponent(period)}`;
+
+/** Periods arrive ascending, so the last is the latest. */
+const latestOf = (periods: readonly string[]) => periods[periods.length - 1];
 
 /**
- * The page at `/` and `/reports/:templateId`. The ReportTemplate lives in the
- * URL, so the address is the whole of what a colleague needs to see the same
- * Report; nothing about the choice is held in memory.
+ * The page at `/`, `/reports/:templateId` and `/reports/:templateId/:period`.
+ * The ReportTemplate and the Period live in the URL, so the address is the whole
+ * of what a colleague needs to see the same Report; nothing about the choice is
+ * held in memory.
  *
- * Until Period selection arrives (ticket 15) the Period is the latest one the
- * ReportTemplate has a Report for.
+ * An address that names less than a full Report is completed by replacing it —
+ * the first ReportTemplate, then that ReportTemplate's latest Period — so Back
+ * never lands on an address that only redirects forward again.
  */
 export function ReportsPage() {
-  const { templateId } = useParams();
+  const { templateId, period } = useParams();
   const navigate = useNavigate();
   const { data: index, isPending, isError, refetch } = useTemplates();
 
@@ -45,7 +54,7 @@ export function ReportsPage() {
   }
 
   if (templateId === undefined) {
-    return <Navigate to={reportPath(first.id)} replace />;
+    return <Navigate to={templatePath(first.id)} replace />;
   }
 
   const template = index.templates.find((candidate) => candidate.id === templateId);
@@ -60,7 +69,7 @@ export function ReportsPage() {
         <ul className="list-disc pl-6">
           {index.templates.map((candidate) => (
             <li key={candidate.id}>
-              <Link to={reportPath(candidate.id)} className="text-slate-900 underline">
+              <Link to={templatePath(candidate.id)} className="text-slate-900 underline">
                 {candidate.name}
               </Link>
             </li>
@@ -70,21 +79,67 @@ export function ReportsPage() {
     );
   }
 
-  // Periods arrive ascending, so the last is the latest.
-  const period = template.periods[template.periods.length - 1];
+  const latest = latestOf(template.periods);
+
+  if (latest === undefined) {
+    return <p>This ReportTemplate has no Reports yet.</p>;
+  }
+
+  if (period === undefined) {
+    return <Navigate to={reportPath(template.id, latest)} replace />;
+  }
+
+  const chooseTemplate = (chosenId: string) => {
+    const chosen = index.templates.find((candidate) => candidate.id === chosenId);
+    const keep = chosen?.periods.includes(period) ? period : undefined;
+
+    // Keep the Period a user is comparing across when the new ReportTemplate has
+    // it; otherwise the bare address, which resolves to the latest.
+    void navigate(keep === undefined ? templatePath(chosenId) : reportPath(chosenId, keep));
+  };
+
+  if (!template.periods.includes(period)) {
+    return (
+      <div className="flex flex-col gap-6">
+        <TemplateChooser
+          templates={index.templates}
+          selectedId={template.id}
+          onChoose={chooseTemplate}
+        />
+        <div className="flex flex-col gap-3">
+          <p role="alert">
+            There is no Report for Period <strong>{period}</strong> under {template.name}. The link
+            may be out of date. Choose one that exists:
+          </p>
+          <ul className="list-disc pl-6">
+            {template.periods.map((candidate) => (
+              <li key={candidate}>
+                <Link to={reportPath(template.id, candidate)} className="text-slate-900 underline">
+                  {candidate}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-6">
-      <TemplateChooser
-        templates={index.templates}
-        selectedId={template.id}
-        onChoose={(chosen) => void navigate(reportPath(chosen))}
-      />
-      {period === undefined ? (
-        <p>This ReportTemplate has no Reports yet.</p>
-      ) : (
-        <ReportScreen templateId={template.id} period={period} />
-      )}
+      <div className="flex flex-wrap gap-x-8 gap-y-3">
+        <TemplateChooser
+          templates={index.templates}
+          selectedId={template.id}
+          onChoose={chooseTemplate}
+        />
+        <PeriodChooser
+          periods={template.periods}
+          selected={period}
+          onChoose={(chosen) => void navigate(reportPath(template.id, chosen))}
+        />
+      </div>
+      <ReportScreen templateId={template.id} period={period} />
     </div>
   );
 }

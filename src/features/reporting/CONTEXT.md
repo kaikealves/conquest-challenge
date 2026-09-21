@@ -43,3 +43,10 @@ _Avoid_: range, date range, timeframe, window
 Revenue minus expenses over a Period. The figure that reconciles a ProfitAndLoss
 to a BalanceSheet.
 _Avoid_: profit, net income, earnings, bottom line
+
+## Note on Period identifiers
+
+Today a Period is identified by a calendar-year string (`2016`), which is
+effectively a FiscalYear key. The API contract treats it as opaque — the client
+never parses or orders it beyond the index's ascending list — so a Period that
+is not a whole year would need no client change.

@@ -14,7 +14,7 @@ export function App() {
 
       <Routes>
         <Route path="/" element={<ReportsPage />} />
-        <Route path="/reports/:templateId" element={<ReportsPage />} />
+        <Route path="/reports/:templateId/:period?" element={<ReportsPage />} />
         <Route path="*" element={<p>There is no page at this address.</p>} />
       </Routes>
     </main>
