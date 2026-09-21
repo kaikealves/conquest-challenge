@@ -4,7 +4,7 @@
 
 **Blocked by:** 11 (Report fetched and rendered).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] The available ReportTemplates are listed and selectable
 - [ ] Selecting a ReportTemplate re-renders the Report under that mapping

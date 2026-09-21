@@ -4,7 +4,7 @@
 
 **Blocked by:** 11 (Report fetched and rendered).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] A Category expands to show its children and collapses again
 - [ ] Nesting works to arbitrary depth, not a fixed two levels

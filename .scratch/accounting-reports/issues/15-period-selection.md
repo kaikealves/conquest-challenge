@@ -4,7 +4,7 @@
 
 **Blocked by:** 14 (ReportTemplate selection).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] A Period is selectable and re-renders the Report
 - [ ] The chosen Period is reflected in the URL alongside the ReportTemplate
