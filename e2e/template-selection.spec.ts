@@ -33,11 +33,11 @@ test('choosing a ReportTemplate puts it in the address', async ({ page }) => {
   await serveTwoTemplates(page);
   await page.goto('/');
 
-  await expect(page).toHaveURL(/\/reports\/alpha$/);
+  await expect(page).toHaveURL(/\/reports\/alpha\/2016$/);
 
   await page.getByRole('combobox', { name: 'Report template' }).selectOption('Beta');
 
-  await expect(page).toHaveURL(/\/reports\/beta$/);
+  await expect(page).toHaveURL(/\/reports\/beta\/2016$/);
   await expect(page.getByRole('row', { name: /Only in beta/ })).toBeVisible();
 });
 
