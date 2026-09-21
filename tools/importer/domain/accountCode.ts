@@ -29,3 +29,21 @@ export function accountCode(value: string): AccountCode {
 export function isUnder(code: AccountCode, ancestorCode: string): boolean {
   return code.value.startsWith(ancestorCode);
 }
+
+/**
+ * How specifically an Account sits under the closest of these ancestor codes:
+ * the length of the longest one it is under, or `undefined` if it is under none.
+ * A longer ancestor is a narrower claim, so this is what "most specific wins"
+ * compares. It lives beside `isUnder` for the same reason: matching is a
+ * question about a code, and asking it in one place keeps it from drifting.
+ */
+export function specificityUnder(
+  code: AccountCode,
+  ancestorCodes: readonly string[],
+): number | undefined {
+  const lengths = ancestorCodes
+    .filter((ancestorCode) => isUnder(code, ancestorCode))
+    .map((ancestorCode) => ancestorCode.length);
+
+  return lengths.length === 0 ? undefined : Math.max(...lengths);
+}
