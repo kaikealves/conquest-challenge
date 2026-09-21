@@ -2,9 +2,59 @@
   "id": "french-chart",
   "name": "French chart of accounts",
   "categories": [
-    { "label": "Purchases", "categoryRoots": ["60", "61", "62"] },
-    { "label": "Staff costs", "categoryRoots": ["63", "64"] },
-    { "label": "Sales", "categoryRoots": ["70"] },
-    { "label": "Other income", "categoryRoots": ["71", "72", "75"] }
+    {
+      "label": "Operating expenses",
+      "categoryRoots": ["60", "61", "62", "63", "64", "65"],
+      "children": [
+        {
+          "label": "Purchases",
+          "categoryRoots": ["60"]
+        },
+        {
+          "label": "External services",
+          "categoryRoots": ["61", "62"]
+        },
+        {
+          "label": "Taxes",
+          "categoryRoots": ["63"]
+        },
+        {
+          "label": "Staff costs",
+          "categoryRoots": ["64"]
+        },
+        {
+          "label": "Other operating expenses",
+          "categoryRoots": ["65"]
+        }
+      ]
+    },
+    {
+      "label": "Operating income",
+      "categoryRoots": ["70", "71", "72", "74", "75"],
+      "children": [
+        {
+          "label": "Sales",
+          "categoryRoots": ["70"]
+        },
+        {
+          "label": "Other income",
+          "categoryRoots": ["71", "72", "74", "75"]
+        }
+      ]
+    },
+    {
+      "label": "Financial",
+      "categoryRoots": ["66", "76"],
+      "children": [
+        {
+          "label": "Financial expenses",
+          "categoryRoots": ["66"]
+        },
+        {
+          "label": "Financial income",
+          "categoryRoots": ["76"]
+        }
+      ]
+    }
   ]
 }

@@ -106,8 +106,9 @@ to the ProfitAndLoss.
 
 ### Architecture
 
-- Two bounded contexts, **Ledger** and **Reporting**, per ADR-0001. They are the
-  two top-level feature directories, so the source layout is the context map.
+- Two bounded contexts, **Ledger** and **Reporting**, per ADR-0001. Ledger lives
+  in `tools/importer/` and Reporting is split between the importer's aggregation
+  and the application's presentation, per ADR-0006.
 - The importer is an **anti-corruption layer** per ADR-0002. Provider vocabulary
   terminates there; no provider term appears in the domain model.
 - **No backend is implemented.** The importer stands in for it at build time and

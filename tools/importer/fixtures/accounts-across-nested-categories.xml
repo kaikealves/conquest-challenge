@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Four Accounts a two-level ReportTemplate sorts into two child Categories under
+  one parent, plus one Account the template does not match at all.
+
+  Purpose: a parent's total is its children's totals; an Account is listed once,
+  at the deepest Category matching it, so a parent that also listed it would show
+  the same money twice; and an unmatched Account inflates nothing.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>606100</number><name>Fournitures</name>
+      <debit>100.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-08</date><internalID>{E1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>613200</number><name>Locations</name>
+      <debit>25.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-09</date><internalID>{E2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>641000</number><name>Salaires</name>
+      <debit>300.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-10</date><internalID>{E3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>645000</number><name>Charges sociales</name>
+      <debit>75.50</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-04-11</date><internalID>{E4}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>411100</number><name>Clients</name>
+      <debit>0</debit><credit>500.50</credit><currency>EUR</currency>
+      <date>2016-04-12</date><internalID>{E5}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>
