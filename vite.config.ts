@@ -109,12 +109,23 @@ function keepMockServiceWorkerOutOfTheBuild(): Plugin {
  */
 const REAL_LEDGER_DIR = process.env.REAL_LEDGER_PUBLIC_DIR ?? '.local/real-ledger';
 
-export default defineConfig(({ mode }) => ({
-  ...(mode === 'real' ? { publicDir: REAL_LEDGER_DIR } : {}),
-  plugins: [
-    react(),
-    tailwindcss(),
-    apiPathsAreNotApplicationRoutes(),
-    keepMockServiceWorkerOutOfTheBuild(),
-  ],
-}));
+export default defineConfig(({ mode, command }) => {
+  // `real` mode points the public directory at the real ledger's output, and a
+  // build copies the public directory into `dist/`. Refusing is the only way
+  // `vite build --mode real` cannot ship a third party's figures.
+  if (mode === 'real' && command === 'build') {
+    throw new Error(
+      'Real-ledger mode is for local development only. Building in it would copy the real ledger into dist/.',
+    );
+  }
+
+  return {
+    ...(mode === 'real' ? { publicDir: REAL_LEDGER_DIR } : {}),
+    plugins: [
+      react(),
+      tailwindcss(),
+      apiPathsAreNotApplicationRoutes(),
+      keepMockServiceWorkerOutOfTheBuild(),
+    ],
+  };
+});

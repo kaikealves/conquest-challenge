@@ -1,3 +1,7 @@
+import { execFile } from 'node:child_process';
+import { writeFile } from 'node:fs/promises';
+import { promisify } from 'node:util';
+
 import { expect, test } from '@playwright/test';
 
 /**
@@ -33,4 +37,35 @@ test('a file the importer did not write answers 404, not the application shell',
 
   expect(response.status()).toBe(404);
   expect(response.headers()['content-type'] ?? '').not.toContain('text/html');
+});
+
+test('a mock service worker left by an earlier `npm run dev` is removed', async ({ page }) => {
+  // Stand-in for MSW's worker: any registered worker on this origin is what
+  // would keep answering `/data/`, so any registered worker must be removed.
+  // A service worker script is fetched outside what Playwright can intercept,
+  // so it is a real file in the directory this dev server serves.
+  await writeFile('.local/e2e-ledger/stale-worker.js', '');
+  await page.goto('/');
+  await page.evaluate(() => navigator.serviceWorker.register('/stale-worker.js'));
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length),
+    )
+    .toBe(1);
+
+  await page.reload();
+
+  await expect
+    .poll(() =>
+      page.evaluate(async () => (await navigator.serviceWorker.getRegistrations()).length),
+    )
+    .toBe(0);
+});
+
+test('a production build cannot be made in real mode', async () => {
+  // Real mode serves the real ledger from the public directory, which a build
+  // copies into dist/. It must refuse rather than ship it.
+  await expect(
+    promisify(execFile)('npx', ['vite', 'build', '--mode', 'real', '--outDir', '.local/refused']),
+  ).rejects.toMatchObject({ stderr: expect.stringContaining('local development only') });
 });

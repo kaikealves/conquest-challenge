@@ -33,7 +33,9 @@ async function startMockApiInDevelopment(): Promise<void> {
   }
 
   if (import.meta.env.MODE === 'real') {
-    const registrations = await navigator.serviceWorker.getRegistrations();
+    // Absent on an insecure origin (a LAN address, say), where no worker can
+    // have been registered either.
+    const registrations = (await navigator.serviceWorker?.getRegistrations()) ?? [];
 
     await Promise.all(registrations.map((registration) => registration.unregister()));
 

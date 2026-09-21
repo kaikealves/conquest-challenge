@@ -19,6 +19,8 @@ it inherits that. So:
 - The output goes to `.local/`, which is gitignored, and **not** to `public/`.
   `npm run build` copies `public/` into `dist/`, so real figures written there
   would ship in the next build. `.local/` is served only by `real` mode.
+- `vite build --mode real` refuses to run, since the same copy would put the
+  real ledger in `dist/`.
 - Plain `npm run dev` is unchanged: MSW, no importer, nothing required.
 - Each run replaces the previous run's Reports, so a Period the current ledger
   lacks is not left behind.
