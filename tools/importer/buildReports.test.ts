@@ -4,6 +4,7 @@ import accountsAcrossNestedCategories from './fixtures/accounts-across-nested-ca
 import amountsBeyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import amountsThatBreakFloatingPoint from './fixtures/amounts-that-break-floating-point.xml?raw';
 import anEntryCarryingBothColumns from './fixtures/an-entry-carrying-both-columns.xml?raw';
+import aControlAccountAlsoPostedToDirectly from './fixtures/a-control-account-also-posted-to-directly.xml?raw';
 import customerAndSupplierAuxiliaryAccounts from './fixtures/customer-and-supplier-auxiliary-accounts.xml?raw';
 import journalsThatOnlyLookLikeOpeningBalances from './fixtures/journals-that-only-look-like-opening-balances.xml?raw';
 import openingBalanceAndOrdinaryEntries from './fixtures/opening-balance-and-ordinary-entries.xml?raw';
@@ -254,4 +255,19 @@ test('an Entry posted straight to a Chart of Accounts Account is unaffected', as
   const bank = report?.categories.find((category) => category.label === 'Bank');
 
   expect(bank?.accounts).toEqual([{ code: '512000', name: 'Banque', total: '10.00' }]);
+});
+
+test('a ControlAccount posted to directly keeps its own name, in whatever order the Entries arrive', async () => {
+  const [report] = await buildReports(inChunks(aControlAccountAlsoPostedToDirectly), {
+    ...partiesAndBank,
+    categories: [{ label: 'Everything', categoryRoots: ['4', '5'] }],
+  });
+
+  // Customers' 5.00 and 1.00 land on the same line as the direct 20.00, and the
+  // line is called what the Provider calls it, not blank.
+  expect(report?.categories[0]?.accounts).toEqual([
+    { code: '411100', name: 'Clients', total: '26.00' },
+    { code: '512000', name: 'Banque', total: '3.00' },
+    { code: '530000', name: 'Caisse', total: '2.00' },
+  ]);
 });

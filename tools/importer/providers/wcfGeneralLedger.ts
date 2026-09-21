@@ -77,11 +77,14 @@ function toEntry(raw: ProviderEntry): Entry {
   // empty on an ordinary Account. Taken from that field and never guessed from
   // the shape of the code, which is only a convention.
   const control = raw.controlAccount?.trim() ?? '';
+  const posted = required(raw, 'accountCode');
 
   return {
     id: required(raw, 'entryId'),
-    account: accountCode(required(raw, 'accountCode')),
-    ...(control === '' ? {} : { controlAccount: accountCode(control) }),
+    account: accountCode(posted),
+    // An Account naming itself is not an AuxiliaryAccount, and rolling it up
+    // would blank its own name.
+    ...(control === '' || control === posted ? {} : { controlAccount: accountCode(control) }),
     accountName: raw.accountName?.trim() ?? '',
     amount: subtract(
       moneyFromDecimal(raw.debit ?? '0', currency),
