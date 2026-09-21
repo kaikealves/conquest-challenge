@@ -23,70 +23,105 @@ const templates: ReportTemplateIndex = {
   templates: [{ id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] }],
 };
 
-const frenchChart2016: Report = {
-  templateId: 'french-chart',
-  templateName: 'French chart of accounts',
-  period: '2016',
-  currency: 'EUR',
-  categories: [
+/**
+ * The Category labels are the ones `tools/importer/templates/french-chart.json`
+ * produces — all three parents, so a test cannot pass while the application
+ * silently drops one.
+ *
+ * The figures are invented. The sample ledger under `brief/` is a third party's
+ * real accounting record, and a total taken from it is still their data, so
+ * nothing here is derived from it. They are internally consistent — each parent
+ * is the sum of its children — because the contract promises that and the tests
+ * check it.
+ */
+function categoriesFor(scale: number): Report['categories'] {
+  const at = (amount: number) => (amount * scale).toFixed(2);
+
+  return [
     {
       label: 'Operating expenses',
-      total: '182433.83',
+      total: at(2350.5),
       accounts: [],
       children: [
         {
           label: 'Purchases',
-          total: '78184.75',
+          total: at(1200),
           children: [],
-          accounts: [
-            { code: '601000', name: 'Achats stockés', total: '78000.00' },
-            { code: '606100', name: 'Fournitures non stockables', total: '184.75' },
-          ],
+          accounts: [{ code: '601000', name: 'Achats stockés', total: at(1200) }],
         },
         {
           label: 'External services',
-          total: '58885.08',
+          total: at(850.5),
           children: [],
           accounts: [
-            { code: '613200', name: 'Locations immobilières', total: '58000.00' },
-            { code: '622600', name: 'Honoraires', total: '885.08' },
+            { code: '613200', name: 'Locations immobilières', total: at(700) },
+            { code: '622600', name: 'Honoraires', total: at(150.5) },
           ],
         },
         {
           label: 'Taxes',
-          total: '45364.00',
+          total: at(300),
           children: [],
-          accounts: [{ code: '635100', name: 'Impôts directs', total: '45364.00' }],
+          accounts: [{ code: '635100', name: 'Impôts directs', total: at(300) }],
         },
-        { label: 'Staff costs', total: '0.00', children: [], accounts: [] },
-        { label: 'Other operating expenses', total: '0.00', children: [], accounts: [] },
+        { label: 'Staff costs', total: at(0), children: [], accounts: [] },
+        { label: 'Other operating expenses', total: at(0), children: [], accounts: [] },
       ],
     },
     {
       label: 'Operating income',
-      total: '-783315.09',
+      total: at(-9125.25),
       accounts: [],
       children: [
         {
           label: 'Sales',
-          total: '-783315.06',
+          total: at(-9000),
           children: [],
-          accounts: [{ code: '706000', name: 'Prestations de services', total: '-783315.06' }],
+          accounts: [{ code: '706000', name: 'Prestations de services', total: at(-9000) }],
         },
         {
           label: 'Other income',
-          total: '-0.03',
+          total: at(-125.25),
           children: [],
-          accounts: [{ code: '758000', name: 'Produits divers', total: '-0.03' }],
+          accounts: [{ code: '758000', name: 'Produits divers', total: at(-125.25) }],
         },
       ],
     },
-  ],
-};
+    {
+      label: 'Financial',
+      total: at(375),
+      accounts: [],
+      children: [
+        {
+          label: 'Financial expenses',
+          total: at(450),
+          children: [],
+          accounts: [{ code: '661100', name: 'Intérêts des emprunts', total: at(450) }],
+        },
+        {
+          label: 'Financial income',
+          total: at(-75),
+          children: [],
+          accounts: [{ code: '768000', name: 'Autres produits financiers', total: at(-75) }],
+        },
+      ],
+    },
+  ];
+}
+
+function reportFor(period: string, scale: number): Report {
+  return {
+    templateId: 'french-chart',
+    templateName: 'French chart of accounts',
+    period,
+    currency: 'EUR',
+    categories: categoriesFor(scale),
+  };
+}
 
 const reports = new Map<string, Report>([
-  ['french-chart/2016', frenchChart2016],
-  ['french-chart/2015', { ...frenchChart2016, period: '2015', categories: [] }],
+  ['french-chart/2016', reportFor('2016', 1)],
+  ['french-chart/2015', reportFor('2015', 2)],
 ]);
 
 /**

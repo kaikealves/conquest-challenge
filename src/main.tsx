@@ -1,7 +1,9 @@
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './App.tsx';
+import { createQueryClient } from './shared/queryClient.ts';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -37,8 +39,16 @@ try {
   console.error('The development mock API failed to start.', cause);
 }
 
+/**
+ * One QueryClient for the application, built by the same factory the tests use
+ * so both exercise the same retry policy.
+ */
+const queryClient = createQueryClient();
+
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
 );
