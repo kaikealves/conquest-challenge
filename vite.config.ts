@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
 import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
@@ -71,32 +70,28 @@ function apiPathsAreNotApplicationRoutes(): Plugin {
 }
 
 /**
- * MSW's service worker is development-only infrastructure, so it is kept out of
- * `public/` — anything there is copied into the build, and a production bundle
- * advertising a mock service worker is both dead weight and misleading. In
- * development it is served from the mocks directory at the scope root the worker
- * needs.
+ * MSW's service worker is development-only infrastructure, but it has to sit in
+ * `public/` to be served at the scope root a worker needs — serving it from
+ * middleware is enough for `curl` and not enough for a real registration, which
+ * fetches the script under stricter rules.
+ *
+ * So it ships to `public/` and is removed from the build output instead. A
+ * production bundle carrying a mock service worker is dead weight and, worse,
+ * advertises that the deployed site might be mocking its own API.
+ * `e2e/report-api.spec.ts` is what holds this true.
  */
-function serveMockServiceWorkerInDevelopment(): Plugin {
-  const workerFile = fileURLToPath(
-    new URL('./src/shared/mocks/mockServiceWorker.js', import.meta.url),
-  );
+function keepMockServiceWorkerOutOfTheBuild(): Plugin {
+  let config: ResolvedConfig;
 
   return {
-    name: 'serve-mock-service-worker-in-development',
-    apply: 'serve',
-    configureServer(server) {
-      server.middlewares.use((request, response, next) => {
-        if (request.url?.split('?')[0] !== '/mockServiceWorker.js') {
-          next();
-          return;
-        }
-
-        void readFile(workerFile, 'utf8').then((source) => {
-          response.setHeader('Content-Type', 'text/javascript');
-          response.setHeader('Service-Worker-Allowed', '/');
-          response.end(source);
-        }, next);
+    name: 'keep-mock-service-worker-out-of-the-build',
+    apply: 'build',
+    configResolved(resolved) {
+      config = resolved;
+    },
+    async closeBundle() {
+      await rm(path.join(config.root, config.build.outDir, 'mockServiceWorker.js'), {
+        force: true,
       });
     },
   };
@@ -107,6 +102,6 @@ export default defineConfig({
     react(),
     tailwindcss(),
     apiPathsAreNotApplicationRoutes(),
-    serveMockServiceWorkerInDevelopment(),
+    keepMockServiceWorkerOutOfTheBuild(),
   ],
 });

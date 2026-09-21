@@ -1,3 +1,4 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
@@ -37,8 +38,17 @@ try {
   console.error('The development mock API failed to start.', cause);
 }
 
+/**
+ * One QueryClient for the application. TanStack Query owns every piece of server
+ * state per ADR-0005, which is what gives caching, deduplication of concurrent
+ * requests for the same Report, and one place for loading and error states.
+ */
+const queryClient = new QueryClient();
+
 createRoot(rootElement).render(
   <StrictMode>
-    <App />
+    <QueryClientProvider client={queryClient}>
+      <App />
+    </QueryClientProvider>
   </StrictMode>,
 );
