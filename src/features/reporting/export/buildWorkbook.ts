@@ -20,33 +20,37 @@ const DECIMAL = /^-?\d+(\.\d+)?$/;
 /** Excel groups rows at most eight deep: levels 0 to 7. */
 const DEEPEST_OUTLINE_LEVEL = 7;
 
-/** A worksheet name may not hold `[ ] : * ? / \` and stops at 31 characters. */
+/**
+ * A worksheet name may not hold `[ ] : * ? / \`, may not start or end with an
+ * apostrophe, may not be `History` (Excel reserves it), and stops at 31
+ * characters. Each of those makes ExcelJS throw, and a throw here would fail the
+ * export for a template whose name the user cannot change, every time.
+ */
 export function sheetNameFor(templateName: string): string {
   const cleaned = templateName
     .replace(/[[\]:*?/\\]/g, ' ')
     .trim()
-    .slice(0, 31);
+    .slice(0, 31)
+    .replace(/^'+|'+$/g, '')
+    .trim();
 
-  return cleaned === '' ? 'Report' : cleaned;
+  return cleaned === '' || cleaned.toLowerCase() === 'history' ? 'Report' : cleaned;
 }
 
 export function fileNameFor(report: Report): string {
   return `${report.templateId}-${report.period}.xlsx`;
 }
 
-function amountsIn(category: Category): string[] {
-  return [
-    category.total,
-    ...category.accounts.map((account) => account.total),
-    ...category.children.flatMap(amountsIn),
-  ];
-}
-
-/** The most decimal places any amount carries, so one format fits the sheet. */
-function fractionDigitsIn(report: Report): number {
-  const amounts = [...report.categories, report.unmatched].flatMap(amountsIn);
-
-  return Math.max(0, ...amounts.map((amount) => amount.split('.')[1]?.length ?? 0));
+/**
+ * The decimal places the currency has, the same answer the screen's formatting
+ * gives, so a whole-number amount is not shown as `850` in one place and
+ * `€850.00` in the other.
+ */
+function fractionDigitsFor(currency: string): number {
+  return (
+    new Intl.NumberFormat('en', { style: 'currency', currency }).resolvedOptions()
+      .minimumFractionDigits ?? 2
+  );
 }
 
 /** Credits in parentheses, as on screen; the sign is still there in the value. */
@@ -70,7 +74,7 @@ export async function buildWorkbook(report: Report): Promise<ExcelJS.Workbook> {
   const sheet = workbook.addWorksheet(sheetNameFor(report.templateName), {
     properties: { outlineProperties: { summaryBelow: false, summaryRight: true } },
   });
-  const format = numberFormat(fractionDigitsIn(report));
+  const format = numberFormat(fractionDigitsFor(report.currency));
 
   sheet.columns = [{ width: 14 }, { width: 46 }, { width: 18 }];
 

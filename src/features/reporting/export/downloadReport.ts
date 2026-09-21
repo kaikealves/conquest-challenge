@@ -1,6 +1,8 @@
 import type { Report } from '../api/contract.ts';
 import { buildWorkbook, fileNameFor } from './buildWorkbook.ts';
 
+const RELEASE_AFTER_MS = 60_000;
+
 /**
  * Builds the workbook and hands it to the browser as a download, without a
  * server: the file is made here, from the Report already in memory.
@@ -18,9 +20,9 @@ export async function downloadReport(report: Report): Promise<void> {
   link.download = fileNameFor(report);
   link.click();
 
-  // The click has been queued by the time this runs; releasing the URL any
-  // sooner can cancel the download in some browsers.
+  // Released later, not now: some browsers start fetching the file after the
+  // click returns, and a URL revoked before that cancels the download.
   setTimeout(() => {
     URL.revokeObjectURL(url);
-  }, 0);
+  }, RELEASE_AFTER_MS);
 }

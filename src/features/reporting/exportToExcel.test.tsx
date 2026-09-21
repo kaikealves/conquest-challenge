@@ -1,7 +1,11 @@
-import { screen } from '@testing-library/react';
+import { cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import ExcelJS from 'exceljs';
+import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
+
+import { REPORT_URL_PATTERN, templateIndexUrl } from './api/contract.ts';
+import { server } from '../../shared/mocks/node.ts';
 
 import { renderApp } from '../../shared/testing/renderApp.tsx';
 
@@ -13,10 +17,12 @@ import { renderApp } from '../../shared/testing/renderApp.tsx';
  * the name on the link that is clicked. The file is then opened with ExcelJS the
  * way Excel would, and the assertions read cells, not internals.
  */
+const revoke = vi.fn();
 let file: Blob | undefined;
 let fileName: string | undefined;
 
 beforeEach(() => {
+  revoke.mockClear();
   file = undefined;
   fileName = undefined;
   URL.createObjectURL = vi.fn((blob: Blob) => {
@@ -24,7 +30,7 @@ beforeEach(() => {
 
     return 'blob:the-export';
   });
-  URL.revokeObjectURL = vi.fn();
+  URL.revokeObjectURL = revoke;
   vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(function (
     this: HTMLAnchorElement,
   ) {
@@ -86,6 +92,23 @@ function rowsOf(sheet: ExcelJS.Worksheet): [string, unknown, number][] {
   });
 
   return rows;
+}
+
+/** The sheet row whose name cell reads `label` (the Category or Account name). */
+function rowOf(sheet: ExcelJS.Worksheet, label: string): ExcelJS.Row {
+  let found: ExcelJS.Row | undefined;
+
+  sheet.eachRow((row) => {
+    if (row.getCell(2).text === label) {
+      found = row;
+    }
+  });
+
+  if (!found) {
+    throw new Error(`No row for ${label}.`);
+  }
+
+  return found;
 }
 
 const totalOf = (sheet: ExcelJS.Worksheet, label: string) =>
@@ -157,6 +180,88 @@ test('a failed export says so and can be tried again', async () => {
 
   await user.click(await screen.findByRole('button', { name: 'Export to Excel' }));
 
-  expect(await screen.findByRole('alert')).toHaveTextContent(/export failed/i);
+  expect(await screen.findByText(/export failed/i)).toBeVisible();
   expect(screen.getByRole('button', { name: 'Export to Excel' })).toBeEnabled();
+});
+
+/** A Report the mock does not serve, for cases that need particular labels or codes. */
+async function exportOf(
+  categories: unknown[],
+  templateName = 'Custom',
+): Promise<ExcelJS.Worksheet> {
+  server.use(
+    http.get(templateIndexUrl(), () =>
+      HttpResponse.json({ templates: [{ id: 'custom', name: templateName, periods: ['2016'] }] }),
+    ),
+    http.get(REPORT_URL_PATTERN, () =>
+      HttpResponse.json({
+        templateId: 'custom',
+        templateName,
+        period: '2016',
+        currency: 'EUR',
+        unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+        categories,
+      }),
+    ),
+  );
+
+  return exportFrom('/reports/custom/2016');
+}
+
+const withAccount = (code: string, name: string, total: string) => [
+  {
+    label: 'Category',
+    total,
+    children: [],
+    accounts: [{ code, name, total }],
+  },
+];
+
+test('a template name Excel would refuse for a sheet still exports', async () => {
+  for (const name of ["'Quoted'", 'History', 'A: B/C [D]', 'x'.repeat(40), '   ']) {
+    file = undefined;
+    const sheet = await exportOf(withAccount('1', 'Acc', '1.00'), name);
+
+    expect(sheet.name.length).toBeLessThanOrEqual(31);
+    expect(sheet.name).not.toMatch(/[[\]:*?/\\]/);
+    cleanup();
+  }
+});
+
+test('an AccountCode with a leading zero stays text, so the zero survives', async () => {
+  const sheet = await exportOf(withAccount('007000', 'Zero-led', '1.00'));
+  const row = rowOf(sheet, 'Zero-led');
+
+  expect(row.getCell(1).value).toBe('007000');
+  expect(row.getCell(1).numFmt).toBe('@');
+});
+
+test('credits are shown in parentheses and the sign stays in the value', async () => {
+  const sheet = await exportOf(withAccount('706', 'Sales', '-9.50'));
+  const cell = rowOf(sheet, 'Sales').getCell(3);
+
+  expect(cell.value).toBe(-9.5);
+  expect(cell.numFmt).toBe('#,##0.00;(#,##0.00)');
+});
+
+test('a whole-number amount still carries the currency’s decimals, as on screen', async () => {
+  const sheet = await exportOf(withAccount('706', 'Whole', '850'));
+
+  expect(rowOf(sheet, 'Whole').getCell(3).numFmt).toBe('#,##0.00;(#,##0.00)');
+});
+
+test('a Category’s rows are indented by depth and the header stays in view', async () => {
+  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const indent = (label: string) => rowOf(sheet, label).getCell(2).alignment?.indent ?? 0;
+
+  expect(indent('Operating expenses')).toBe(0);
+  expect(indent('External services')).toBe(1);
+  expect(indent('Locations immobilières')).toBe(2);
+  expect(sheet.views[0]).toMatchObject({ state: 'frozen', ySplit: 2 });
+});
+
+test('the file’s address is not released until the browser has had time to fetch it', async () => {
+  await exportFrom('/reports/french-profit-and-loss/2016');
+
+  expect(revoke).not.toHaveBeenCalled();
 });

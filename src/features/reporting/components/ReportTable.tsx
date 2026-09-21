@@ -32,7 +32,9 @@ export function ReportTable({ report }: ReportTableProps) {
             Period {report.period} · amounts in {report.currency} · credits in parentheses
           </p>
         </div>
-        <ExportButton report={report} />
+        {/* Keyed by what it exports, so a failure shown for one Report is not still
+            on screen after the user moves to another. */}
+        <ExportButton key={`${report.templateId}/${report.period}`} report={report} />
       </div>
 
       <UnmatchedNotice report={report} />
