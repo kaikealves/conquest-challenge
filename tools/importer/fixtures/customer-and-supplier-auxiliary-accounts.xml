@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Two customers and one supplier, each with an Account of their own that the
+  Provider ties to a collective Account through <collectif>, plus one Entry
+  posted straight to a Chart of Accounts Account.
+
+  Purpose: a Report shows "Customers", not one line per customer. Both sides are
+  covered, because a customer balance is normally a debit and a supplier balance
+  a credit, and a rollup that only handled one sign would pass a single-sided test.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>0ACME</number><name>Acme</name><collectif>411100</collectif>
+      <debit>100.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-01</date><internalID>{X1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>0BOLT</number><name>Bolt</name><collectif>411100</collectif>
+      <debit>50.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-02</date><internalID>{X2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>9ELEC</number><name>Electricite</name><collectif>401100</collectif>
+      <debit>0</debit><credit>80.00</credit><currency>EUR</currency>
+      <date>2016-05-03</date><internalID>{X3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name><collectif/>
+      <debit>10.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-04</date><internalID>{X4}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

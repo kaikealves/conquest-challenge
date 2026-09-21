@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A collective Account that has an Entry of its own between two customers'
+  Entries, an ordinary Account whose <collectif> holds only whitespace, and an
+  Account whose <collectif> names itself.
+
+  Purpose: the Entry posted directly keeps its real name whichever order the
+  Entries arrive in, a blank <collectif> is not an Account, and an Account
+  pointing at itself is an ordinary Account and keeps its name.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>0ACME</number><name>Acme</name><collectif>411100</collectif>
+      <debit>5.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-06-01</date><internalID>{Y1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>411100</number><name>Clients</name><collectif/>
+      <debit>20.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-06-02</date><internalID>{Y2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>0BOLT</number><name>Bolt</name><collectif>411100</collectif>
+      <debit>1.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-06-03</date><internalID>{Y3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name><collectif> </collectif>
+      <debit>3.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-06-04</date><internalID>{Y4}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>530000</number><name>Caisse</name><collectif>530000</collectif>
+      <debit>2.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-06-05</date><internalID>{Y5}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>
