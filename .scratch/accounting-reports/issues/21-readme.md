@@ -11,3 +11,4 @@
 - [ ] The architecture is summarised with links to CONTEXT-MAP.md and the ADRs
 - [ ] It states where to place the sample ledger for an optional full run, and why it is not committed
 - [ ] Scope decisions and deliberate omissions are stated plainly
+- [ ] It says which component satisfies the brief's "React component that fetches data from a mock API (e.g. JSONPlaceholder), manages loading/error states": the Report screen, with MSW as the mock API (ticket 16 was closed `wontfix` on that reading)
