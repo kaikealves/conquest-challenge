@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { memo, useState } from 'react';
 
 import type { Category } from '../api/contract.ts';
 import { AccountRow } from './AccountRow.tsx';
@@ -28,7 +28,11 @@ type CategoryRowProps = {
  * Rows are omitted, not hidden, while collapsed, so a screen reader is not read
  * a hundred Accounts nobody asked for.
  */
-export function CategoryRow({ category, currency, depth = 0 }: CategoryRowProps) {
+export const CategoryRow = memo(function CategoryRow({
+  category,
+  currency,
+  depth = 0,
+}: CategoryRowProps) {
   const [expanded, setExpanded] = useState(false);
   const expandable = category.children.length > 0 || category.accounts.length > 0;
 
@@ -84,4 +88,4 @@ export function CategoryRow({ category, currency, depth = 0 }: CategoryRowProps)
       )}
     </>
   );
-}
+});
