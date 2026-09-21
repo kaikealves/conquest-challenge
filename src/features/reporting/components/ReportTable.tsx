@@ -1,22 +1,29 @@
+import { useId } from 'react';
+
 import type { Report } from '../api/contract.ts';
 import { CategoryRow } from './CategoryRow.tsx';
 
-type ReportViewProps = {
+type ReportTableProps = {
   readonly report: Report;
 };
 
 /**
  * A Report: its Categories and their totals.
  *
+ * Named for the shape it draws rather than for the Report itself, because the
+ * Reporting glossary lists "view" among the words to avoid for a Report.
+ *
  * Categories are rendered flat here. Ticket 13 makes them expandable to
  * arbitrary depth, which is why `CategoryRow` takes a Category rather than a
  * label and a total — the recursion has somewhere to go.
  */
-export function ReportView({ report }: ReportViewProps) {
+export function ReportTable({ report }: ReportTableProps) {
+  const headingId = useId();
+
   return (
-    <section aria-labelledby="report-heading" className="flex flex-col gap-4">
+    <section aria-labelledby={headingId} className="flex flex-col gap-4">
       <div>
-        <h2 id="report-heading" className="text-xl font-semibold text-slate-900">
+        <h2 id={headingId} className="text-xl font-semibold text-slate-900">
           {report.templateName}
         </h2>
         <p className="text-sm text-slate-600">
@@ -39,8 +46,14 @@ export function ReportView({ report }: ReportViewProps) {
           </tr>
         </thead>
         <tbody>
-          {report.categories.map((category) => (
-            <CategoryRow key={category.label} category={category} currency={report.currency} />
+          {report.categories.map((category, position) => (
+            // The contract does not promise a Category label is unique, so the
+            // key carries its position as well.
+            <CategoryRow
+              key={`${String(position)}-${category.label}`}
+              category={category}
+              currency={report.currency}
+            />
           ))}
         </tbody>
       </table>

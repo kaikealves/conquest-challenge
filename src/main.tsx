@@ -1,8 +1,9 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from './App.tsx';
+import { createQueryClient } from './shared/queryClient.ts';
 import './index.css';
 
 const rootElement = document.getElementById('root');
@@ -39,11 +40,10 @@ try {
 }
 
 /**
- * One QueryClient for the application. TanStack Query owns every piece of server
- * state per ADR-0005, which is what gives caching, deduplication of concurrent
- * requests for the same Report, and one place for loading and error states.
+ * One QueryClient for the application, built by the same factory the tests use
+ * so both exercise the same retry policy.
  */
-const queryClient = new QueryClient();
+const queryClient = createQueryClient();
 
 createRoot(rootElement).render(
   <StrictMode>

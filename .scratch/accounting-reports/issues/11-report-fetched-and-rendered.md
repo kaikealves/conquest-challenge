@@ -55,3 +55,46 @@ registration, which fetches the script under stricter rules. The worker is back
 in `public/` where it works, and a build plugin removes it from `dist` instead,
 so the deployed site still carries no mock. `e2e/report-api.spec.ts` holds that
 true.
+
+### Review fixes
+
+**The mock fixture held the real company's figures.** `182433.83` and
+`783315.09` are SPV Brignolles' actual totals, taken from `brief/` in ticket 10
+and committed. `CLAUDE.md` forbids exactly that, and a summary of a third
+party's ledger is still their data. The fixture now carries invented figures
+under the Category labels the real ReportTemplate produces, internally
+consistent so the contract's parent-equals-parts rule still holds. It was also
+missing a top-level Category the template defines, which no test could have
+caught.
+
+**`isCredit` treated `-0.00` as a credit**, so a Category netting to zero was
+coloured and announced as income. It now tests the magnitude, and a signed zero
+is normalised before formatting — left alone, `Intl` renders `-0.00` as
+`(0.00)`.
+
+**The validation ran on the wrong string.** The sign was stripped before the
+pattern was applied, so `--5` passed and printed as `5.00`. It now validates the
+whole string, and returns the raw text instead of throwing: throwing happens
+inside render and takes the page down with it, and a blank screen tells a user
+less than an odd-looking number does.
+
+**Parentheses do not reach a screen reader.** The claim that they "survive a
+screen reader" was wrong — punctuation is not announced by default and colour is
+invisible, so a screen-reader user received neither signal. A credit now also
+carries a visually hidden word, verified by removing it and watching the test
+fail. `currencySign: 'accounting'` produces the parentheses now, so they are the
+locale's rather than ASCII ones wrapped on by hand.
+
+**`ReportView` used a word the glossary proscribes** — the Report entry lists
+`view` under _Avoid_. It is `ReportTable`, named for the shape it draws.
+
+**Tests and production used different QueryClients**, so the retry policy that
+ships was exercised by nothing. One factory builds both, and it does not retry a
+4xx: asking again for a Report that does not exist returned the same 404 four
+times and turned a clear failure into a five-second wait.
+
+Also: a fixed display locale, so a Report reads the same for two colleagues and
+the tests do not depend on the machine they run on; `useId` rather than a
+hardcoded DOM id; a key carrying position, since the contract does not promise a
+Category label is unique; and the error state no longer shows the API's message,
+which `docs/api-contract.md` says is for a developer reading a network tab.

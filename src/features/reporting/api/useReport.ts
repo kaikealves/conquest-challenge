@@ -1,6 +1,7 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 
-import { reportUrl, type Report } from './contract.ts';
+import { httpError } from '../../../shared/httpError.ts';
+import { reportUrl, type ApiError, type Report } from './contract.ts';
 
 /**
  * Fetches a Report. TanStack Query owns the server state per ADR-0005 — there is
@@ -14,8 +15,14 @@ export function useReport(templateId: string, period: string): UseQueryResult<Re
       const response = await fetch(reportUrl(templateId, period), { signal });
 
       if (!response.ok) {
-        throw new Error(
-          `Could not load the Report for ${templateId} in ${period} (${String(response.status)}).`,
+        // The status travels with the error so the retry policy can tell a
+        // missing Report from a server that briefly fell over.
+        const body = (await response.json().catch(() => undefined)) as ApiError | undefined;
+
+        throw httpError(
+          body?.message ??
+            `Could not load the Report for ${templateId} in ${period} (${String(response.status)}).`,
+          response.status,
         );
       }
 

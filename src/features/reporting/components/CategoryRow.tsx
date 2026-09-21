@@ -1,5 +1,6 @@
 import type { Category } from '../api/contract.ts';
-import { formatAmount, isCredit } from '../formatAmount.ts';
+import { DISPLAY_LOCALE } from '../displayLocale.ts';
+import { CREDIT_LABEL, DEBIT_LABEL, formatAmount, isCredit } from '../formatAmount.ts';
 
 type CategoryRowProps = {
   readonly category: Category;
@@ -9,9 +10,10 @@ type CategoryRowProps = {
 /**
  * One labelled line of a Report.
  *
- * A credit is set apart twice over — parentheses and colour — because colour
- * alone excludes anyone who cannot distinguish it, and the parentheses survive
- * a printout and a screen reader.
+ * A credit is signalled three ways, because the first two reach different
+ * people and neither reaches everyone: parentheses for a sighted reader who
+ * knows accounting, colour for a quick scan, and a visually hidden word for
+ * assistive technology, which announces neither of the others.
  */
 export function CategoryRow({ category, currency }: CategoryRowProps) {
   const credit = isCredit(category.total);
@@ -26,7 +28,8 @@ export function CategoryRow({ category, currency }: CategoryRowProps) {
           credit ? 'text-emerald-700' : 'text-slate-900'
         }`}
       >
-        {formatAmount(category.total, currency)}
+        {formatAmount(category.total, currency, DISPLAY_LOCALE)}
+        <span className="sr-only"> {credit ? CREDIT_LABEL : DEBIT_LABEL}</span>
       </td>
     </tr>
   );

@@ -1,5 +1,5 @@
 import { useReport } from './api/useReport.ts';
-import { ReportView } from './components/ReportView.tsx';
+import { ReportTable } from './components/ReportTable.tsx';
 
 /**
  * The Report a user looks at.
@@ -26,12 +26,17 @@ export function ReportScreen() {
   }
 
   if (isError) {
+    // The contract says a message body is for a developer reading a network
+    // tab, not for display, so the detail goes to the console and the user gets
+    // a sentence. Ticket 12 owns making this good, with retry.
+    console.error('The Report could not be loaded.', error);
+
     return (
       <p role="alert" className="text-red-700">
-        {error.message}
+        The Report could not be loaded.
       </p>
     );
   }
 
-  return <ReportView report={report} />;
+  return <ReportTable report={report} />;
 }
