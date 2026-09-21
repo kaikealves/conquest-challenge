@@ -1,7 +1,12 @@
+---
+status: accepted
+updates: ADR-0005
+---
+
 # Memoize what was measured to cost something, and nothing else
 
-Accepted 2026-09-22. Updates the last consequence of
-[ADR-0005](./0005-tanstack-query-owns-server-state.md).
+> Updates the last consequence of
+> [ADR-0005](./0005-tanstack-query-owns-server-state.md).
 
 The brief asks for optimisation "such as memoization (e.g. `React.memo`,
 `useMemo`) or lazy loading", with the reasoning explained. This records what was
@@ -41,14 +46,27 @@ in absolute terms, so read the ratios.
    the first draw of a large Report proportionately cheaper.
 2. **`React.memo` on `CategoryRow`.** Its props are a Category, a currency and a
    depth. The Category comes out of the query cache, which keeps the same object
-   while the data is unchanged, so the props are stable and the memo holds. A
-   parent update (the ReportTemplate or Period chooser re-rendering, an export
-   state change lifted later, a search box added later) then costs 0.3 ms instead
+   while the data is unchanged, so the props are stable and the memo holds. When
+   a parent updates and the Report does not change, the rows cost 0.3 ms instead
    of 790 ms across 5,782 rows.
+
+   **This is a guard, not a fix for something happening today.** Choosing a
+   ReportTemplate or Period navigates, so the Report itself changes and every
+   row must re-render regardless; a refetch that returns the same data keeps the
+   same object (structural sharing), and `useReport` reads only `data` and the
+   error and pending flags, so background fetching re-renders nothing. The one
+   live case is the ReportTemplate list arriving again, which re-renders the
+   page above an unchanged Report. The memo is what stops the next piece of state
+   added above the table — a search box, a lifted export status — from costing
+   most of a second on a large Report, without anyone having to notice.
 
 Tests count rather than time (`renderCost.test.tsx`): every row draws one
 amount, so calls to `formatAmount` are rows rendered. They fail if the memo is
-removed or if a formatter is built per row.
+removed or if a formatter is built per row. They are implementation-level
+guards and break the usual rule of asserting only at the two seams, knowingly:
+no user action re-renders the table with unchanged data, so no behaviour at the
+seam exists to assert. Only the props `ReportTable` hands `CategoryRow` matter;
+a child row is re-rendered only by its parent, which the memo already stops.
 
 ## What was deliberately not done
 
@@ -77,9 +95,8 @@ removed or if a formatter is built per row.
 ## The lazy loading that is done
 
 ExcelJS (about 930 kB, 256 kB gzipped) is imported when the user clicks Export,
-so it is a separate chunk that a reader of Reports never downloads. That is a
-larger saving than every render optimisation above combined, for the visitor who
-does not export.
+so it is a separate chunk that a reader of Reports never downloads. For a visitor
+who only reads, that is the largest thing kept off the page.
 
 ## Consequences
 

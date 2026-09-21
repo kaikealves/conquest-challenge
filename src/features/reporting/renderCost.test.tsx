@@ -15,9 +15,12 @@ import * as formatting from './formatAmount.ts';
  * stopwatch is not; the stopwatch figures are in `renderCost.bench.tsx` and
  * docs/adr/0008-memoization-strategy.md.
  *
- * These render `ReportTable` directly, below the usual seam, because what they
- * assert is about re-rendering and no user can cause an unrelated parent update
- * yet: they need a parent that updates while the Report does not change.
+ * These are implementation-level guards and knowingly break the usual rule of
+ * asserting at the two seams: they render `ReportTable` directly and spy on
+ * `formatAmount` and `Intl.NumberFormat`. No user action re-renders the table
+ * with an unchanged Report, so there is no behaviour at the seam to assert; a
+ * test needs a parent that updates while the Report does not. The third test
+ * depends on module state (the formatter cache), hence "at most one".
  */
 vi.mock('./formatAmount.ts', async (importOriginal) => {
   const original = await importOriginal<typeof formatting>();

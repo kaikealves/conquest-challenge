@@ -171,9 +171,10 @@ to the ProfitAndLoss.
 - The hierarchical Report is a hand-rolled recursive component rather than a
   table library, since hierarchy and composition are the capabilities being
   demonstrated. The dossier records when a table library would be the right call.
-- Memoization is applied deliberately: the Category tree aggregation is memoized
-  because it is real CPU work, and Report rows are memoized to stop a sibling
-  expansion re-rendering the tree. It is not applied by reflex elsewhere.
+- Memoization is applied deliberately and only where measured: one number
+  formatter per currency and memoized Category rows, not the tree aggregation,
+  which the client does not do (ADR-0006). It is not applied by reflex
+  elsewhere. See ADR-0008.
 - Excel export runs client-side from the Report already in memory.
 
 ## Testing Decisions

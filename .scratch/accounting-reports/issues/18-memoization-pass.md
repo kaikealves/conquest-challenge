@@ -6,11 +6,11 @@
 
 **Status:** resolved
 
-- [ ] The Category tree aggregation is memoized, because it is real CPU work
-- [ ] Report rows are memoized so expanding one row does not re-render the tree
-- [ ] Memoization is not applied by reflex elsewhere; the restraint is deliberate and stated
-- [ ] The reasoning is written down, including why request deduplication is the first-order win and render memoization second
-- [ ] A measurement or profile supports the claim rather than asserting it
+- [x] ~~The Category tree aggregation is memoized~~ — does not apply: the client does not aggregate (ADR-0006). The measured real CPU work, one number formatter built per row, is cached instead
+- [x] Report rows are memoized (`CategoryRow`); expanding one row already re-rendered only that row, and the memo guards against a parent update re-rendering the tree
+- [x] Memoization is not applied by reflex elsewhere; the restraint is deliberate and stated (ADR-0008)
+- [x] The reasoning is written down, including why request deduplication is the first-order win and render memoization second (ADR-0008)
+- [x] A measurement supports the claim: `npm run bench`, figures in ADR-0008
 
 ## Delivered, with one bullet not applying as written
 
