@@ -3,6 +3,7 @@ import { useId } from 'react';
 import type { Report } from '../api/contract.ts';
 import { DISPLAY_LOCALE } from '../displayLocale.ts';
 import { formatAmount } from '../formatAmount.ts';
+import { ExportButton } from './ExportButton.tsx';
 import { CategoryRow } from './CategoryRow.tsx';
 
 type ReportTableProps = {
@@ -22,13 +23,18 @@ export function ReportTable({ report }: ReportTableProps) {
 
   return (
     <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <div>
-        <h2 id={headingId} className="text-xl font-semibold text-slate-900">
-          {report.templateName}
-        </h2>
-        <p className="text-sm text-slate-600">
-          Period {report.period} · amounts in {report.currency} · credits in parentheses
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 id={headingId} className="text-xl font-semibold text-slate-900">
+            {report.templateName}
+          </h2>
+          <p className="text-sm text-slate-600">
+            Period {report.period} · amounts in {report.currency} · credits in parentheses
+          </p>
+        </div>
+        {/* Keyed by what it exports, so a failure shown for one Report is not still
+            on screen after the user moves to another. */}
+        <ExportButton key={`${report.templateId}/${report.period}`} report={report} />
       </div>
 
       <UnmatchedNotice report={report} />
