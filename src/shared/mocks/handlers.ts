@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 
 import {
-  reportUrl,
+  REPORT_URL_PATTERN,
   templateIndexUrl,
   type ApiError,
   type Report,
@@ -166,7 +166,7 @@ export const PERIOD_THAT_FAILS = '0000';
 export const handlers = [
   http.get(templateIndexUrl(), () => HttpResponse.json(templates)),
 
-  http.get(reportUrl(':templateId', ':period'), ({ params }) => {
+  http.get(REPORT_URL_PATTERN, ({ params }) => {
     const templateId = String(params.templateId);
     const period = String(params.period);
 

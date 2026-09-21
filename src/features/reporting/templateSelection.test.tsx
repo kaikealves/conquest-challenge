@@ -1,7 +1,10 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
 
+import { REPORT_URL_PATTERN, templateIndexUrl } from './api/contract.ts';
+import { server } from '../../shared/mocks/node.ts';
 import { renderApp } from '../../shared/testing/renderApp.tsx';
 
 /**
@@ -62,4 +65,75 @@ test('an address that is no page of the application says so', async () => {
   renderApp('/somewhere/else');
 
   expect(await screen.findByText(/no page/i)).toBeInTheDocument();
+});
+
+const indexOf = (templates: unknown[]) =>
+  http.get(templateIndexUrl(), () => HttpResponse.json({ templates }));
+
+test('an id that is not path-safe still reaches its own Report', async () => {
+  const requested: string[] = [];
+  server.events.on('request:start', ({ request }) => {
+    requested.push(new URL(request.url).pathname);
+  });
+  server.use(
+    indexOf([{ id: 'a b/c', name: 'Odd id', periods: ['2016'] }]),
+    http.get(REPORT_URL_PATTERN, () =>
+      HttpResponse.json({
+        templateId: 'a b/c',
+        templateName: 'Odd id',
+        period: '2016',
+        currency: 'EUR',
+        categories: [{ label: 'Found it', total: '1.00', children: [], accounts: [] }],
+      }),
+    ),
+  );
+  renderApp();
+
+  expect(await screen.findByRole('row', { name: /Found it/ })).toBeInTheDocument();
+  expect(requested).toContain('/data/reports/a%20b%2Fc/2016.json');
+});
+
+test('a list of ReportTemplates that fails to load can be asked for again', async () => {
+  const user = userEvent.setup();
+  let recovered = false;
+  server.use(
+    http.get(templateIndexUrl(), () =>
+      recovered
+        ? HttpResponse.json({
+            templates: [{ id: 'french-chart', name: 'French', periods: ['2016'] }],
+          })
+        : HttpResponse.json({ message: 'down' }, { status: 404 }),
+    ),
+  );
+  renderApp();
+
+  const retry = await screen.findByRole('button', { name: /try again/i });
+  recovered = true;
+  await user.click(retry);
+
+  expect(await screen.findByRole('row', { name: /Operating expenses/ })).toBeInTheDocument();
+});
+
+test('no ReportTemplates at all is said plainly', async () => {
+  server.use(indexOf([]));
+  renderApp();
+
+  expect(await screen.findByText(/no ReportTemplates to choose from/)).toBeInTheDocument();
+});
+
+test('a ReportTemplate with no Periods says it has no Reports', async () => {
+  server.use(indexOf([{ id: 'empty', name: 'Empty', periods: [] }]));
+  renderApp();
+
+  expect(await screen.findByText(/no Reports yet/)).toBeInTheDocument();
+});
+
+test('the latest Period is the one shown when the link names none', async () => {
+  server.use(indexOf([{ id: 'french-chart', name: 'French', periods: ['2015', '2016'] }]));
+  renderApp('/reports/french-chart');
+
+  // 2016 is scaled 1x in the mock and 2015 2x, so the total says which loaded.
+  expect(await screen.findByRole('row', { name: /Operating expenses/ })).toHaveTextContent(
+    '€2,350.50',
+  );
 });

@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, expect, test } from 'vitest';
 
-import { reportUrl } from './api/contract.ts';
+import { REPORT_URL_PATTERN } from './api/contract.ts';
 import { ReportScreen } from './ReportScreen.tsx';
 import { server } from '../../shared/mocks/node.ts';
 import { createQueryClient } from '../../shared/queryClient.ts';
@@ -40,9 +40,7 @@ function renderScreen(templateId: string, period: string) {
 }
 
 function respondWith(status: number, body: Record<string, unknown>) {
-  server.use(
-    http.get(reportUrl(':templateId', ':period'), () => HttpResponse.json(body, { status })),
-  );
+  server.use(http.get(REPORT_URL_PATTERN, () => HttpResponse.json(body, { status })));
 }
 
 const aReportWith = (categories: unknown[]) => ({
@@ -98,7 +96,7 @@ test('retrying a failed request loads the Report, without reloading the page', a
   let recovered = false;
 
   server.use(
-    http.get(reportUrl(':templateId', ':period'), () =>
+    http.get(REPORT_URL_PATTERN, () =>
       recovered
         ? HttpResponse.json(
             aReportWith([{ label: 'Purchases', total: '10.00', children: [], accounts: [] }]),

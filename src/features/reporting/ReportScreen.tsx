@@ -12,9 +12,8 @@ type ReportScreenProps = {
  * Four outcomes, kept apart because a user acts differently on each: still
  * working, failed and worth retrying, arrived but empty, arrived with figures.
  *
- * The ReportTemplate and Period arrive as props. Tickets 14 and 15 put them in
- * the URL so a Report can be bookmarked and shared; `App` passes constants
- * until then.
+ * The ReportTemplate and Period arrive as props. The page above reads them from
+ * the URL, so a Report can be bookmarked and shared.
  */
 export function ReportScreen({ templateId, period }: ReportScreenProps) {
   const { data: report, isPending, isError, error, refetch } = useReport(templateId, period);

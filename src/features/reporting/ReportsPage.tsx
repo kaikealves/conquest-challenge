@@ -53,7 +53,7 @@ export function ReportsPage() {
   if (!template) {
     return (
       <div className="flex flex-col gap-3">
-        <p>
+        <p role="alert">
           There is no ReportTemplate called <strong>{templateId}</strong>. The link may be out of
           date. Choose one that exists:
         </p>

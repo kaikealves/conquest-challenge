@@ -87,5 +87,13 @@ export function templateIndexUrl(): string {
 }
 
 export function reportUrl(templateId: string, period: string): string {
-  return `${API_BASE_URL}/reports/${templateId}/${period}.json`;
+  // Encoded, so an id or Period can never change which path is requested.
+  return `${API_BASE_URL}/reports/${encodeURIComponent(templateId)}/${encodeURIComponent(period)}.json`;
 }
+
+/**
+ * The same address with its two segments left open, in the syntax MSW matches
+ * on. Kept beside `reportUrl` so the mock cannot describe a different path from
+ * the one the client requests.
+ */
+export const REPORT_URL_PATTERN = `${API_BASE_URL}/reports/:templateId/:period.json`;
