@@ -18,9 +18,12 @@ export type CategoryDefinition = {
   readonly label: string;
   readonly categoryRoots: readonly CategoryRoot[];
   /**
-   * Nested Categories. A parent's CategoryRoots should span its children's, so
-   * the parent matches everything beneath it; an Account is then placed at the
-   * deepest Category matching it and counted once.
+   * Nested Categories. Every Category in a template competes for an Account on
+   * the same terms — the longest matching CategoryRoot wins, then the deeper
+   * Category — so a child may claim an Account its parent's own roots would not
+   * select, and the parent's total is then everything beneath it, not
+   * everything its roots match. The definitions must be distinct objects, as
+   * parsed JSON always is: placement is keyed on identity.
    */
   readonly children?: readonly CategoryDefinition[];
 };

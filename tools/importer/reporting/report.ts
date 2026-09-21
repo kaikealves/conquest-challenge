@@ -224,11 +224,16 @@ function forKind(account: AccountTotal, kind: ReportKind): AccountTotal {
 function resultCategory(
   definition: ResultDefinition,
   accounts: readonly AccountTotal[],
+  placement: ReadonlyMap<string, CategoryDefinition>,
   currency: Currency,
 ): Category {
   // Listed, not just summed, so a user can see which revenue and expense
   // Accounts make up the figure and the total stays the sum of what is under it.
-  const matched = accounts.filter(({ account }) => matches(account, definition));
+  // An Account already placed in a chart Category stays there: it is in exactly
+  // one Category even if a template's Result roots overlap its chart roots.
+  const matched = accounts.filter(
+    ({ account }) => !placement.has(account.value) && matches(account, definition),
+  );
   const total = matched.reduce<Money>(
     (running, account) => add(running, account.total),
     zero(currency),
@@ -245,9 +250,8 @@ function resultCategory(
  * those, so an incomplete template is visible rather than quietly losing money.
  *
  * Which Category an Account lands in is `placeAccounts`' decision. The Result
- * takes its own Accounts by its own CategoryRoots and is not part of that
- * contest: a BalanceSheet's chart Categories and its revenue and expense Accounts
- * are disjoint by construction.
+ * takes its own Accounts by its own CategoryRoots, from those no chart Category
+ * has claimed.
  */
 export function buildReport(
   totals: AccountTotals,
@@ -267,7 +271,7 @@ export function buildReport(
     period,
     currency,
     categories: template.result
-      ? [...categories, resultCategory(template.result, accounts, currency)]
+      ? [...categories, resultCategory(template.result, accounts, placement, currency)]
       : categories,
   };
 }

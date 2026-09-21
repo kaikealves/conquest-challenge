@@ -384,3 +384,58 @@ test('a CategoryRoot longer than the parent’s claims an Account for a nested C
   expect(report?.categories[0]?.children[0]?.total).toBe('-16.00');
   expect(totalOf(report, 'Sales')).toBe('-17.00');
 });
+
+test('a Category with several CategoryRoots is as specific as its longest matching one', async () => {
+  // Revenue has both a short and a long root; Services has one in between. The
+  // account 706000 is under all three, and Revenue's 7060 is the narrowest.
+  const template: ReportTemplate = {
+    id: 'several-roots',
+    name: 'Several roots',
+    kind: 'ProfitAndLoss',
+    categories: [
+      { label: 'Services', categoryRoots: ['706'] },
+      { label: 'Revenue', categoryRoots: ['70', '7060'] },
+    ],
+  };
+  const report = await revenueReport(template);
+
+  // 706000 and 70600000001 are under 7060, and 70 and 701000 only under 70; 706 is
+  // under Services' longer root, so it stays there.
+  expect(totalOf(report, 'Revenue')).toBe('-29.00');
+  expect(totalOf(report, 'Services')).toBe('-2.00');
+});
+
+test('a child Category may claim an Account its parent’s own roots do not select', async () => {
+  const template: ReportTemplate = {
+    id: 'child-outside-parent',
+    name: 'Child outside parent',
+    kind: 'ProfitAndLoss',
+    categories: [
+      {
+        label: 'Services',
+        categoryRoots: ['706'],
+        children: [{ label: 'Goods', categoryRoots: ['701'] }],
+      },
+    ],
+  };
+  const report = await revenueReport(template);
+
+  // The parent's total is everything beneath it: its own 706 Accounts and the
+  // child's 701000, which the parent's roots alone would not have taken.
+  expect(report?.categories[0]?.children[0]?.total).toBe('-16.00');
+  expect(totalOf(report, 'Services')).toBe('-30.00');
+});
+
+test('an Account a chart Category has claimed is not counted again in the Result', async () => {
+  const [report] = await buildReports(inChunks(accountsOfUnusualLength), {
+    id: 'overlapping-result',
+    name: 'Overlapping Result',
+    kind: 'BalanceSheet',
+    categories: [{ label: 'Services', categoryRoots: ['706'] }],
+    result: { label: 'Result', categoryRoots: ['70'] },
+  });
+
+  // 706… (-14.00) is Services'; the Result takes only the other two.
+  expect(totalOf(report, 'Services')).toBe('-14.00');
+  expect(totalOf(report, 'Result')).toBe('-17.00');
+});

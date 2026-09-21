@@ -26,3 +26,5 @@ Provider payload in, Report JSON out, from the tool.
 - Sibling overlap, which ticket 04 knowingly double-counted, is fixed: an Account is now in exactly one Category.
 - Fixture `accounts-of-unusual-length` covers 2-, 3-, 6- and 11-character codes.
 - The importer's output on the real ledger is byte-identical before and after (the shipped templates have disjoint sibling roots), checked locally.
+- A child Category may claim an Account its parent's own roots do not select; the parent's total is then everything beneath it. Accepted and documented on `CategoryDefinition.children`, and tested. Definitions must be distinct objects (parsed JSON always is), because placement is keyed on identity.
+- An Account a chart Category has claimed is excluded from the Result, so an overlapping Result root cannot count it twice.
