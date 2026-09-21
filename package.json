@@ -19,6 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e",
+    "dev:real": "npm run import -- brief/brignolles-gl.xml .local/real-ledger/data && vite --mode real",
     "import": "tsx tools/importer/main.ts",
     "bench": "vitest bench --run"
   },
