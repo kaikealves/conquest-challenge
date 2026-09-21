@@ -27,3 +27,11 @@ differ in shape from the French one rather than copying it.
 
 Scale it to be legible, not impressive: a few hundred Entries is enough to look
 real and small enough that a reviewer can check a total by hand.
+
+## Deprioritised
+
+2026-09-21: this existed so a _deployed_ site would not carry the third-party
+ledger. With ticket 23 set to `wontfix` nothing is published, so the real ledger
+stays on the author's machine (gitignored) and this is no longer on the critical
+path. It becomes relevant again if the app is ever deployed or shared as a
+public repo demo. The status stays `ready-for-agent`.

@@ -4,7 +4,7 @@
 
 **Blocked by:** 13 (Hierarchical Report).
 
-**Status:** ready-for-agent
+**Status:** wontfix
 
 - [ ] The application builds and deploys as a static bundle
 - [ ] The mock service worker is served correctly in production
@@ -31,3 +31,11 @@ rewrite of the form `/((?!data/|assets/).*)` → `/index.html` does both. Check 
 the deployed site that a shared `/reports/<id>` link loads after a hard refresh,
 and that a missing `/data/reports/x/y.json` still answers 404. `vite preview`
 does its own fallback, so the end-to-end suite cannot prove either half.
+
+## Decision: not deploying, for now
+
+2026-09-21, the author decided not to deploy. Marked `wontfix` rather than
+deleted, so the reasoning survives: the notes above (SPA fallback that leaves
+`/data/` alone; `dist/` ships no data) are still what to do if this is revived.
+A reviewer runs the app locally instead — see ticket 27, which lets them do so
+against the real ledger.
