@@ -10,6 +10,7 @@ const report = {
   templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories: [
     {
       label: 'Operating expenses',

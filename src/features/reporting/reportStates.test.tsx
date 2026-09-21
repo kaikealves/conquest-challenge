@@ -48,6 +48,7 @@ const aReportWith = (categories: unknown[]) => ({
   templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories,
 });
 
@@ -166,4 +167,21 @@ test('two views of the same Report make one request, not two', async () => {
   await screen.findAllByRole('table');
 
   expect(requested).toHaveLength(1);
+});
+
+test('a Report with no Categories but money in the unmatched group is still shown', async () => {
+  respondWith(200, {
+    ...aReportWith([]),
+    unmatched: {
+      label: 'Unmatched',
+      total: '9.00',
+      children: [],
+      accounts: [{ code: '999', name: 'Lost', total: '9.00' }],
+    },
+  });
+  renderApp();
+
+  // Nothing to show would hide exactly the money the group exists to surface.
+  expect(await screen.findByText(/1 Account matched none/)).toBeVisible();
+  expect(screen.queryByText(/no Categories for Period/)).not.toBeInTheDocument();
 });

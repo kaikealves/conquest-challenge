@@ -9,6 +9,7 @@ const reportFor = (period: string, total: string) => ({
   templateName: 'Alpha',
   period,
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories: [{ label: 'Expenses', total, children: [], accounts: [] }],
 });
 

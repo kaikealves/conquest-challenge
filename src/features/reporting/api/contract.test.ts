@@ -55,6 +55,12 @@ test('what the importer writes satisfies the type the application reads', async 
   // compiling rather than failing at runtime in front of a user.
   const report: Report | undefined = produced;
 
+  // An annotation only proves the client's fields exist in the output, not that
+  // the output has no field the client has never heard of. Naming the whole set
+  // catches a server that starts sending something the application ignores.
+  expect(Object.keys(produced ?? {}).sort()).toEqual(
+    ['categories', 'currency', 'period', 'templateId', 'templateName', 'unmatched'].sort(),
+  );
   expect(report?.templateId).toBe('operating-expenses');
   expect(report?.period).toBe('2016');
   expect(report?.currency).toBe('EUR');
@@ -62,7 +68,9 @@ test('what the importer writes satisfies the type the application reads', async 
 
 test('every amount crosses the boundary as an exact decimal string', async () => {
   const [report] = await buildReports(inChunks(accountsAcrossNestedCategories), template);
-  const amounts = (report?.categories ?? []).flatMap(everyAmountIn);
+  const amounts = [...(report?.categories ?? []), ...(report ? [report.unmatched] : [])].flatMap(
+    everyAmountIn,
+  );
 
   expect(amounts.length).toBeGreaterThan(0);
 
@@ -80,7 +88,7 @@ test('an Account appears exactly once across the whole tree', async () => {
       ...category.accounts.map((account) => account.code),
       ...codesIn(category.children),
     ]);
-  })(report?.categories ?? []);
+  })([...(report?.categories ?? []), ...(report ? [report.unmatched] : [])]);
 
   expect(codes).toHaveLength(new Set(codes).size);
 });

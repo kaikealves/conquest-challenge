@@ -2,10 +2,11 @@
   "id": "french-profit-and-loss",
   "name": "Profit and loss",
   "kind": "ProfitAndLoss",
+  "scope": ["6", "7"],
   "categories": [
     {
       "label": "Operating expenses",
-      "categoryRoots": ["60", "61", "62", "63", "64", "65"],
+      "categoryRoots": ["60", "61", "62", "63", "64", "65", "68"],
       "children": [
         {
           "label": "Purchases",
@@ -26,12 +27,16 @@
         {
           "label": "Other operating expenses",
           "categoryRoots": ["65"]
+        },
+        {
+          "label": "Depreciation and provisions",
+          "categoryRoots": ["68"]
         }
       ]
     },
     {
       "label": "Operating income",
-      "categoryRoots": ["70", "71", "72", "74", "75"],
+      "categoryRoots": ["70", "71", "72", "74", "75", "78"],
       "children": [
         {
           "label": "Sales",
@@ -39,7 +44,7 @@
         },
         {
           "label": "Other income",
-          "categoryRoots": ["71", "72", "74", "75"]
+          "categoryRoots": ["71", "72", "74", "75", "78"]
         }
       ]
     },
@@ -56,6 +61,24 @@
           "categoryRoots": ["76"]
         }
       ]
+    },
+    {
+      "label": "Exceptional",
+      "categoryRoots": ["67", "77"],
+      "children": [
+        {
+          "label": "Exceptional expenses",
+          "categoryRoots": ["67"]
+        },
+        {
+          "label": "Exceptional income",
+          "categoryRoots": ["77"]
+        }
+      ]
+    },
+    {
+      "label": "Income tax",
+      "categoryRoots": ["69"]
     }
   ]
 }

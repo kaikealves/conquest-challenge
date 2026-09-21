@@ -24,7 +24,14 @@ test('every Category of the Report is on screen, and no others', async () => {
 
   // Pinning the whole set, not a sample: asserting two labels would pass while
   // the application silently dropped a third Category.
-  expect(await reportRows()).toEqual(['Operating expenses', 'Operating income', 'Financial']);
+  expect(await reportRows()).toEqual([
+    'Operating expenses',
+    'Operating income',
+    'Financial',
+    'Exceptional',
+    'Income tax',
+    'Unmatched',
+  ]);
 });
 
 test('a Category shows the total the Report gives it', async () => {

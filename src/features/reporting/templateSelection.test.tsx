@@ -83,6 +83,7 @@ test('an id that is not path-safe still reaches its own Report', async () => {
         templateName: 'Odd id',
         period: '2016',
         currency: 'EUR',
+        unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
         categories: [{ label: 'Found it', total: '1.00', children: [], accounts: [] }],
       }),
     ),

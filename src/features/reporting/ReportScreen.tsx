@@ -1,3 +1,4 @@
+import type { Report } from './api/contract.ts';
 import { useReport } from './api/useReport.ts';
 import { ReportTable } from './components/ReportTable.tsx';
 
@@ -55,10 +56,19 @@ function StateAnnouncement({ isPending, isError, report }: StateProps) {
   );
 }
 
+/**
+ * A Report with no Categories and nothing unmatched has nothing to show. One
+ * with money in the unmatched group does, however few Categories it has, because
+ * hiding that would be the silent loss the group exists to prevent.
+ */
+function isEmpty(report: Report): boolean {
+  return report.categories.length === 0 && report.unmatched.accounts.length === 0;
+}
+
 function describeState({ isPending, isError, report }: StateProps): string {
   if (isPending) return 'Loading the Report.';
   if (isError) return 'The Report could not be loaded.';
-  if (report && report.categories.length === 0) return 'This Report has no Categories.';
+  if (report && isEmpty(report)) return 'This Report has no Categories.';
 
   return 'The Report is ready.';
 }
@@ -100,7 +110,7 @@ function ReportState({ isPending, isError, error, report, onRetry }: ReportState
     );
   }
 
-  if (report && report.categories.length === 0) {
+  if (report && isEmpty(report)) {
     // Only what is known. An empty Report can mean a Period with no postings or
     // a ReportTemplate whose CategoryRoots match nothing — the payload does not
     // say which, so neither does this.

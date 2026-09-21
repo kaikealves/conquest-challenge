@@ -1,6 +1,8 @@
 import { useId } from 'react';
 
 import type { Report } from '../api/contract.ts';
+import { DISPLAY_LOCALE } from '../displayLocale.ts';
+import { formatAmount } from '../formatAmount.ts';
 import { CategoryRow } from './CategoryRow.tsx';
 
 type ReportTableProps = {
@@ -29,6 +31,8 @@ export function ReportTable({ report }: ReportTableProps) {
         </p>
       </div>
 
+      <UnmatchedNotice report={report} />
+
       <table className="w-full border-collapse text-sm">
         <caption className="sr-only">
           Categories of the {report.templateName} for Period {report.period}
@@ -53,8 +57,29 @@ export function ReportTable({ report }: ReportTableProps) {
               currency={report.currency}
             />
           ))}
+          {/* Always drawn, empty or not: a group that appeared only when it had
+              something in it would make its absence mean nothing. */}
+          <CategoryRow category={report.unmatched} currency={report.currency} />
         </tbody>
       </table>
     </section>
+  );
+}
+
+/** Says what an incomplete ReportTemplate is costing, in words, above the figures. */
+function UnmatchedNotice({ report }: { readonly report: Report }) {
+  const count = report.unmatched.accounts.length;
+
+  if (count === 0) {
+    return null;
+  }
+
+  return (
+    <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      {count === 1 ? '1 Account matched' : `${String(count)} Accounts matched`} none of this
+      ReportTemplate’s Categories, totalling{' '}
+      {formatAmount(report.unmatched.total, report.currency, DISPLAY_LOCALE)}. The ReportTemplate
+      may be incomplete.
+    </p>
   );
 }
