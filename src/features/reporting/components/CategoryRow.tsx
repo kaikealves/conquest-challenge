@@ -21,8 +21,9 @@ type CategoryRowProps = {
  * collapsing a parent forgets which of its children were open, which reads as
  * the tidy behaviour a user expects.
  *
- * The arrow is a CSS pseudo-element driven by `aria-expanded`, so it is neither
- * announced nor part of the label's text.
+ * The arrow is a CSS pseudo-element driven by `aria-expanded`, so it is not part of
+ * the label's text. Some screen readers do read generated content; the
+ * `aria-expanded` state is the signal that is meant to be relied on.
  *
  * Rows are omitted, not hidden, while collapsed, so a screen reader is not read
  * a hundred Accounts nobody asked for.

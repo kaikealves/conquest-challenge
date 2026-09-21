@@ -34,10 +34,14 @@ test('a Category expands to show its children, and collapses again', async () =>
   expect(screen.getByRole('row', { name: /Purchases/ })).toBeInTheDocument();
   expect(screen.getByRole('row', { name: /External services/ })).toBeInTheDocument();
 
+  await user.click(await expandControl('External services'));
+  expect(screen.getByRole('row', { name: /613200/ })).toBeInTheDocument();
+
   await user.click(control);
 
   expect(control).toHaveAttribute('aria-expanded', 'false');
   expect(screen.queryByRole('row', { name: /Purchases/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole('row', { name: /613200/ })).not.toBeInTheDocument();
 });
 
 test('an Account shows both its AccountCode and its name, with its total', async () => {
@@ -70,10 +74,9 @@ test('the expand control works from the keyboard', async () => {
 
   const control = await expandControl('Financial');
 
-  await user.tab();
-  // Tab order starts at the first Category; move on to the third.
-  await user.tab();
-  await user.tab();
+  // A button is in the tab order by being a button; focusing it stands in for
+  // reaching it, and the keys are what this test is about.
+  control.focus();
   expect(control).toHaveFocus();
 
   await user.keyboard('{Enter}');
@@ -110,4 +113,18 @@ test('nesting is not limited to two levels', async () => {
   }
 
   expect(screen.getByRole('row', { name: /Deepest account/ })).toBeInTheDocument();
+});
+
+test('each level sits further in than the one above it', async () => {
+  const user = userEvent.setup();
+  renderApp();
+
+  await user.click(await expandControl('Operating expenses'));
+  await user.click(await expandControl('External services'));
+
+  const indent = (name: RegExp) =>
+    parseFloat(screen.getByRole('row', { name }).querySelector('th')?.style.paddingLeft ?? '0');
+
+  expect(indent(/Operating expenses/)).toBeLessThan(indent(/External services/));
+  expect(indent(/External services/)).toBeLessThan(indent(/613200/));
 });
