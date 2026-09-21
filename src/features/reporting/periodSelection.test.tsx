@@ -18,7 +18,7 @@ const chooser = () => screen.findByRole('combobox', { name: 'Period' });
 const expensesRow = () => screen.findByRole('row', { name: /Operating expenses/ });
 
 test('the Periods a ReportTemplate has are listed, earliest first', async () => {
-  renderApp('/reports/french-chart/2016');
+  renderApp('/reports/french-profit-and-loss/2016');
 
   const options = (await chooser()).querySelectorAll('option');
 
@@ -27,7 +27,7 @@ test('the Periods a ReportTemplate has are listed, earliest first', async () => 
 
 test('choosing another Period shows that Period’s Report', async () => {
   const user = userEvent.setup();
-  renderApp('/reports/french-chart/2016');
+  renderApp('/reports/french-profit-and-loss/2016');
 
   expect(await expensesRow()).toHaveTextContent('€2,350.50');
 
@@ -38,27 +38,27 @@ test('choosing another Period shows that Period’s Report', async () => {
 });
 
 test('a link naming a Period shows that Period, not the latest', async () => {
-  renderApp('/reports/french-chart/2015');
+  renderApp('/reports/french-profit-and-loss/2015');
 
   expect(await expensesRow()).toHaveTextContent('€4,701.00');
   expect(await chooser()).toHaveDisplayValue('2015');
 });
 
 test('a link naming no Period shows the latest', async () => {
-  renderApp('/reports/french-chart');
+  renderApp('/reports/french-profit-and-loss');
 
   expect(await expensesRow()).toHaveTextContent('€2,350.50');
   expect(await chooser()).toHaveDisplayValue('2016');
 });
 
 test('a Period the ReportTemplate has no Report for is explained, not shown as a failure', async () => {
-  renderApp('/reports/french-chart/1999');
+  renderApp('/reports/french-profit-and-loss/1999');
 
   expect(await screen.findByText(/no Report for Period/)).toHaveTextContent('1999');
   expect(screen.queryByText(/could not be loaded/)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: '2016' })).toHaveAttribute(
     'href',
-    '/reports/french-chart/2016',
+    '/reports/french-profit-and-loss/2016',
   );
 });
 
@@ -66,7 +66,7 @@ test('changing ReportTemplate keeps the Period, even when it is not the latest',
   const user = userEvent.setup();
   // Both ReportTemplates have 2015 and 2016, and the user is on 2015: if the
   // Period were dropped, the fallback would land on 2016 and this would show.
-  renderApp('/reports/french-chart/2015');
+  renderApp('/reports/french-profit-and-loss/2015');
 
   await expensesRow();
   await user.selectOptions(
@@ -84,13 +84,13 @@ test('changing ReportTemplate falls back to the latest Period when the new one l
     http.get(templateIndexUrl(), () =>
       HttpResponse.json({
         templates: [
-          { id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] },
-          { id: 'balance-sheet', name: 'Balance sheet', periods: ['2016'] },
+          { id: 'french-profit-and-loss', name: 'Profit and loss', periods: ['2015', '2016'] },
+          { id: 'french-balance-sheet', name: 'Balance sheet', periods: ['2016'] },
         ],
       }),
     ),
   );
-  renderApp('/reports/french-chart/2015');
+  renderApp('/reports/french-profit-and-loss/2015');
 
   await expensesRow();
   await user.selectOptions(

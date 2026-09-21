@@ -19,4 +19,11 @@ export type Entry = {
   readonly accountName: string;
   readonly amount: Money;
   readonly date: string;
+  /**
+   * Whether this Entry carries a balance-sheet Account forward into a new
+   * FiscalYear rather than recording something that happened in it. Decided
+   * where the Provider's payload is translated, because how a Provider marks
+   * one is the Provider's business.
+   */
+  readonly openingBalance: boolean;
 };

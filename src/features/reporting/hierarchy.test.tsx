@@ -98,8 +98,8 @@ test('nesting is not limited to two levels', async () => {
   server.use(
     http.get(REPORT_URL_PATTERN, () =>
       HttpResponse.json({
-        templateId: 'french-chart',
-        templateName: 'French chart of accounts',
+        templateId: 'french-profit-and-loss',
+        templateName: 'Profit and loss',
         period: '2016',
         currency: 'EUR',
         categories: [nest(1)],

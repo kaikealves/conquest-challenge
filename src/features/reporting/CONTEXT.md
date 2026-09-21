@@ -21,6 +21,12 @@ A Report of revenue and expense Accounts over a Period. Excludes OpeningBalance
 Entries.
 _Avoid_: P&L, PnL, income statement, earnings
 
+**ReportKind**:
+Whether a Report is a BalanceSheet or a ProfitAndLoss. It decides how a
+carried-forward balance is treated: a BalanceSheet includes OpeningBalance
+Entries, a ProfitAndLoss excludes them. Every ReportTemplate declares one.
+_Avoid_: statement, type, mode
+
 **Category**:
 One labelled line of a Report, holding every Account matched by its
 CategoryRoots.
@@ -41,7 +47,10 @@ _Avoid_: range, date range, timeframe, window
 
 **Result**:
 Revenue minus expenses over a Period. The figure that reconciles a ProfitAndLoss
-to a BalanceSheet.
+to a BalanceSheet. A BalanceSheet shows it as its own Category, taken with the
+ledger's sign (a profit is a credit, so negative), which is what makes the
+BalanceSheet's Categories net to zero. It lists the revenue and expense Accounts
+it is made of.
 _Avoid_: profit, net income, earnings, bottom line
 
 ## Note on Period identifiers

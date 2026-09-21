@@ -1,0 +1,55 @@
+{
+  "id": "french-balance-sheet",
+  "name": "Balance sheet",
+  "kind": "BalanceSheet",
+  "categories": [
+    {
+      "label": "Assets",
+      "categoryRoots": ["2", "3", "41", "5"],
+      "children": [
+        {
+          "label": "Fixed assets",
+          "categoryRoots": ["2"]
+        },
+        {
+          "label": "Stocks",
+          "categoryRoots": ["3"]
+        },
+        {
+          "label": "Receivables",
+          "categoryRoots": ["41"]
+        },
+        {
+          "label": "Cash and banks",
+          "categoryRoots": ["5"]
+        }
+      ]
+    },
+    {
+      "label": "Equity and liabilities",
+      "categoryRoots": ["1", "40", "42", "43", "44", "45", "46", "47", "48", "49"],
+      "children": [
+        {
+          "label": "Equity and borrowings",
+          "categoryRoots": ["1"]
+        },
+        {
+          "label": "Suppliers",
+          "categoryRoots": ["40"]
+        },
+        {
+          "label": "Staff and social",
+          "categoryRoots": ["42", "43"]
+        },
+        {
+          "label": "Tax and other payables",
+          "categoryRoots": ["44", "45", "46", "47", "48", "49"]
+        }
+      ]
+    }
+  ],
+  "result": {
+    "label": "Result",
+    "categoryRoots": ["6", "7"]
+  }
+}

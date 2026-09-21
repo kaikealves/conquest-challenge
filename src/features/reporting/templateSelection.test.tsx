@@ -19,7 +19,7 @@ test('the available ReportTemplates are listed', async () => {
   const options = (await chooser()).querySelectorAll('option');
 
   expect([...options].map((option) => option.textContent)).toEqual([
-    'French chart of accounts',
+    'Profit and loss',
     'Balance sheet',
   ]);
 });
@@ -28,7 +28,7 @@ test('opening the application with no ReportTemplate shows the first one', async
   renderApp();
 
   expect(await screen.findByRole('row', { name: /Operating expenses/ })).toBeInTheDocument();
-  expect(await chooser()).toHaveDisplayValue('French chart of accounts');
+  expect(await chooser()).toHaveDisplayValue('Profit and loss');
 });
 
 test('choosing another ReportTemplate shows that Report instead', async () => {
@@ -43,7 +43,7 @@ test('choosing another ReportTemplate shows that Report instead', async () => {
 });
 
 test('a shared link shows the Report its sender chose', async () => {
-  renderApp('/reports/balance-sheet');
+  renderApp('/reports/french-balance-sheet');
 
   expect(await screen.findByRole('row', { name: /Assets/ })).toBeInTheDocument();
   // The chooser agrees with the Report, or the page contradicts itself.
@@ -56,7 +56,7 @@ test('a link to a ReportTemplate that does not exist says so and offers the ones
   expect(await screen.findByText(/no-such-template/)).toBeInTheDocument();
   expect(screen.getByRole('link', { name: 'Balance sheet' })).toHaveAttribute(
     'href',
-    '/reports/balance-sheet',
+    '/reports/french-balance-sheet',
   );
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
@@ -100,7 +100,7 @@ test('a list of ReportTemplates that fails to load can be asked for again', asyn
     http.get(templateIndexUrl(), () =>
       recovered
         ? HttpResponse.json({
-            templates: [{ id: 'french-chart', name: 'French', periods: ['2016'] }],
+            templates: [{ id: 'french-profit-and-loss', name: 'French', periods: ['2016'] }],
           })
         : HttpResponse.json({ message: 'down' }, { status: 404 }),
     ),
@@ -129,8 +129,10 @@ test('a ReportTemplate with no Periods says it has no Reports', async () => {
 });
 
 test('the latest Period is the one shown when the link names none', async () => {
-  server.use(indexOf([{ id: 'french-chart', name: 'French', periods: ['2015', '2016'] }]));
-  renderApp('/reports/french-chart');
+  server.use(
+    indexOf([{ id: 'french-profit-and-loss', name: 'French', periods: ['2015', '2016'] }]),
+  );
+  renderApp('/reports/french-profit-and-loss');
 
   // 2016 is scaled 1x in the mock and 2015 2x, so the total says which loaded.
   expect(await screen.findByRole('row', { name: /Operating expenses/ })).toHaveTextContent(

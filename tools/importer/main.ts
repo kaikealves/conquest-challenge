@@ -26,7 +26,17 @@ async function loadTemplates(): Promise<ReportTemplate[]> {
     files.map(async (file) => {
       const contents = await readFile(new URL(file, TEMPLATES_DIR), 'utf8');
 
-      return JSON.parse(contents) as ReportTemplate;
+      const template = JSON.parse(contents) as ReportTemplate;
+
+      // A template missing its kind would quietly be treated as one kind
+      // and give wrong figures for the other, so refuse it here.
+      if (template.kind !== 'BalanceSheet' && template.kind !== 'ProfitAndLoss') {
+        throw new Error(
+          `ReportTemplate ${file} must say whether its kind is a BalanceSheet or a ProfitAndLoss.`,
+        );
+      }
+
+      return template;
     }),
   );
 }

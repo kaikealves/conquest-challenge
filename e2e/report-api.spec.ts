@@ -18,7 +18,7 @@ test('a Report that does not exist answers 404, not the application shell', asyn
 });
 
 test('an application route still falls back to the shell', async ({ request }) => {
-  const response = await request.get('/reports/french-chart/2016');
+  const response = await request.get('/reports/french-profit-and-loss/2016');
 
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type'] ?? '').toContain('text/html');

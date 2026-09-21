@@ -1,7 +1,12 @@
 import { isUnder, type AccountCode } from '../domain/accountCode.ts';
 import type { Entry } from '../domain/entry.ts';
-import { add, moneyToDecimal, zero, type Currency, type Money } from '../domain/money.ts';
-import type { CategoryDefinition, ReportTemplate } from './reportTemplate.ts';
+import { add, moneyToDecimal, subtract, zero, type Currency, type Money } from '../domain/money.ts';
+import type {
+  CategoryDefinition,
+  ReportTemplate,
+  ResultDefinition,
+  ReportKind,
+} from './reportTemplate.ts';
 
 /**
  * The payload that crosses to the application. Amounts are exact decimal
@@ -35,7 +40,12 @@ export type Report = {
   readonly categories: readonly Category[];
 };
 
-type AccountTotal = { account: AccountCode; name: string; total: Money };
+/**
+ * `total` is everything posted to the Account in the Period; `opening` is the
+ * part of it that was carried forward. Keeping both lets one pass over the
+ * payload serve both kinds of Report.
+ */
+type AccountTotal = { account: AccountCode; name: string; total: Money; opening: Money };
 
 export type AccountTotals = ReadonlyMap<string, AccountTotal>;
 
@@ -66,12 +76,15 @@ export async function totalByAccountAndPeriod(
   for await (const entry of entries) {
     const period = periodOf(entry);
     const totals = periods.get(period) ?? new Map<string, AccountTotal>();
-    const running = totals.get(entry.account.value)?.total ?? zero(currency);
+    const before = totals.get(entry.account.value);
 
     totals.set(entry.account.value, {
       account: entry.account,
       name: entry.accountName,
-      total: add(running, entry.amount),
+      total: add(before?.total ?? zero(currency), entry.amount),
+      opening: entry.openingBalance
+        ? add(before?.opening ?? zero(currency), entry.amount)
+        : (before?.opening ?? zero(currency)),
     });
     periods.set(period, totals);
   }
@@ -79,7 +92,7 @@ export async function totalByAccountAndPeriod(
   return periods;
 }
 
-function matches(account: AccountCode, category: CategoryDefinition): boolean {
+function matches(account: AccountCode, category: CategoryDefinition | ResultDefinition): boolean {
   return category.categoryRoots.some((categoryRoot) => isUnder(account, categoryRoot));
 }
 
@@ -142,6 +155,37 @@ function toCategory(aggregated: CategoryTotal): Category {
 }
 
 /**
+ * What an Account contributes to a Report of this kind. A ProfitAndLoss leaves
+ * out what was carried forward; a BalanceSheet takes everything.
+ */
+function forKind(account: AccountTotal, kind: ReportKind): AccountTotal {
+  return kind === 'ProfitAndLoss'
+    ? { ...account, total: subtract(account.total, account.opening) }
+    : account;
+}
+
+/**
+ * The Result: the net of the revenue and expense Accounts, taken as they are
+ * ledgered (a credit negative), so that it sits among the BalanceSheet's
+ * Categories and they net to zero.
+ */
+function resultCategory(
+  definition: ResultDefinition,
+  accounts: readonly AccountTotal[],
+  currency: Currency,
+): Category {
+  // Listed, not just summed, so a user can see which revenue and expense
+  // Accounts make up the figure and the total stays the sum of what is under it.
+  const matched = accounts.filter(({ account }) => matches(account, definition));
+  const total = matched.reduce<Money>(
+    (running, account) => add(running, account.total),
+    zero(currency),
+  );
+
+  return toCategory({ label: definition.label, total, children: [], accounts: matched });
+}
+
+/**
  * Aggregates Account totals into the Categories a ReportTemplate defines.
  *
  * Two deliberate gaps, both owned by later tickets and visible here rather than
@@ -161,15 +205,18 @@ export function buildReport(
   period: string,
   currency: Currency,
 ): Report {
-  const accounts = [...totals.values()];
+  const accounts = [...totals.values()].map((account) => forKind(account, template.kind));
+  const categories = template.categories.map((category) =>
+    toCategory(aggregateCategory(category, accounts, currency)),
+  );
 
   return {
     templateId: template.id,
     templateName: template.name,
     period,
     currency,
-    categories: template.categories.map((category) =>
-      toCategory(aggregateCategory(category, accounts, currency)),
-    ),
+    categories: template.result
+      ? [...categories, resultCategory(template.result, accounts, currency)]
+      : categories,
   };
 }

@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A balanced ledger for one FiscalYear: a bank Account and a capital Account
+  carried forward from the year before (journal AN), then one sale of 250.00
+  paid straight into the bank.
+
+  Purpose: the carried-forward 1000.00 belongs in a BalanceSheet and not in a
+  ProfitAndLoss, and once the Result (the 250.00 sale) is counted, the
+  BalanceSheet's Categories net to zero.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>1000.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-01-01</date><internalID>{O1}</internalID><ref>AN</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>101000</number><name>Capital</name>
+      <debit>0</debit><credit>1000.00</credit><currency>EUR</currency>
+      <date>2016-01-01</date><internalID>{O2}</internalID><ref>AN</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>250.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-03-10</date><internalID>{O3}</internalID><ref>BQ01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>706000</number><name>Prestations de services</name>
+      <debit>0</debit><credit>250.00</credit><currency>EUR</currency>
+      <date>2016-03-10</date><internalID>{O4}</internalID><ref>VTE01</ref>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>
