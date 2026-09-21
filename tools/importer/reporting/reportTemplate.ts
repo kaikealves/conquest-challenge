@@ -56,6 +56,15 @@ export type ReportTemplate = {
   readonly id: string;
   readonly name: string;
   readonly kind: ReportKind;
+  /**
+   * The Accounts this template is answerable for, as CategoryRoots: a
+   * ProfitAndLoss answers for revenue and expense Accounts and has no business
+   * with the balance-sheet ones, so those are not "unmatched", they are out of
+   * scope. Omitted, the template answers for every Account. Only what is in scope
+   * and unclaimed lands in `unmatched`, which is what keeps it a signal instead
+   * of a list of everything a ProfitAndLoss was never meant to show.
+   */
+  readonly scope?: readonly CategoryRoot[];
   readonly categories: readonly CategoryDefinition[];
   /**
    * Appended after the Categories when present. A BalanceSheet carries one so its

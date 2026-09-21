@@ -439,3 +439,172 @@ test('an Account a chart Category has claimed is not counted again in the Result
   expect(totalOf(report, 'Services')).toBe('-14.00');
   expect(totalOf(report, 'Result')).toBe('-17.00');
 });
+
+const fixtures = {
+  purchasesAcrossTwoFiscalYears,
+  amountsThatBreakFloatingPoint,
+  amountsBeyondFloatPrecision,
+  anEntryCarryingBothColumns,
+  accountsAcrossNestedCategories,
+  accountsOfUnusualLength,
+  customerAndSupplierAuxiliaryAccounts,
+  aControlAccountAlsoPostedToDirectly,
+  journalsThatOnlyLookLikeOpeningBalances,
+  openingBalanceAndOrdinaryEntries,
+};
+
+/**
+ * What the ledger says each Period nets to, read straight off the payload with
+ * no help from the importer: an independent oracle for "nothing was lost".
+ */
+function netByPeriod(
+  payload: string,
+  onlyCodes: (code: string) => boolean = () => true,
+): Map<string, bigint> {
+  const cents = (text: string) => {
+    const [whole = '0', fraction = ''] = text.split('.');
+
+    return BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0').slice(0, 2));
+  };
+  const net = new Map<string, bigint>();
+
+  for (const [, entry = ''] of payload.matchAll(
+    /<wsGeneralLedger>([\s\S]*?)<\/wsGeneralLedger>/g,
+  )) {
+    const field = (name: string) =>
+      new RegExp(`<${name}>([^<]*)</${name}>`).exec(entry)?.[1] ?? '0';
+    const period = field('date').slice(0, 4);
+
+    if (!onlyCodes(field('number'))) {
+      continue;
+    }
+
+    net.set(period, (net.get(period) ?? 0n) + cents(field('debit')) - cents(field('credit')));
+  }
+
+  return net;
+}
+
+const toCents = (decimal: string) => BigInt(decimal.replace('.', ''));
+
+const matchesNothingButPurchases: ReportTemplate = {
+  ...purchases,
+  categories: [{ label: 'Purchases', categoryRoots: ['606'] }],
+};
+
+test('every Entry is either in a Category or in the unmatched group: nothing disappears', async () => {
+  for (const [name, payload] of Object.entries(fixtures)) {
+    // A BalanceSheet takes carried-forward balances too, so its total is the
+    // whole ledger's net; a ProfitAndLoss deliberately leaves them out.
+    const reports = await buildReports(inChunks(payload), {
+      ...matchesNothingButPurchases,
+      kind: 'BalanceSheet',
+    });
+    const expected = netByPeriod(payload);
+
+    for (const report of reports) {
+      const inReport = [...report.categories, report.unmatched].reduce(
+        (sum, category) => sum + toCents(category.total),
+        0n,
+      );
+
+      expect(inReport, `${name}, ${report.period}`).toBe(expected.get(report.period));
+    }
+  }
+});
+
+test('the Accounts no Category claimed are collected, with their total', async () => {
+  const [report] = await buildReports(inChunks(accountsAcrossNestedCategories), operatingExpenses);
+
+  // The customer Account 411100 is under no CategoryRoot of this template.
+  expect(report?.unmatched.total).toBe('-500.50');
+  expect(report?.unmatched.accounts.map((account) => [account.code, account.total])).toEqual([
+    ['411100', '-500.50'],
+  ]);
+});
+
+test('a ReportTemplate that covers everything reports an empty unmatched group, not none', async () => {
+  const [report] = await buildReports(inChunks(accountsAcrossNestedCategories), {
+    ...operatingExpenses,
+    categories: [{ label: 'Everything', categoryRoots: ['6', '4'] }],
+  });
+
+  expect(report?.unmatched).toEqual({
+    label: 'Unmatched',
+    total: '0.00',
+    children: [],
+    accounts: [],
+  });
+});
+
+test('an Account the Result has taken is not also unmatched', async () => {
+  const [report] = await buildReports(inChunks(openingBalanceAndOrdinaryEntries), balanceSheet);
+
+  // 706000 is the Result's; 512000 and 101000 are the Categories'.
+  expect(report?.unmatched.accounts).toEqual([]);
+});
+
+test('an Account outside a template’s scope is out of scope, not unmatched', async () => {
+  // A ProfitAndLoss answers for revenue and expense Accounts. The customer
+  // Account 411100 is a balance-sheet one, so leaving it out is correct and
+  // reporting it as a gap would be noise on every ProfitAndLoss.
+  const [report] = await buildReports(inChunks(accountsAcrossNestedCategories), {
+    ...operatingExpenses,
+    scope: ['6', '7'],
+  });
+
+  expect(report?.unmatched.accounts).toEqual([]);
+});
+
+test('an Account inside the scope that no Category claimed is still unmatched', async () => {
+  const [report] = await buildReports(inChunks(accountsAcrossNestedCategories), {
+    ...operatingExpenses,
+    // Nothing in this template covers 64x staff costs' sibling 65x, so narrow the
+    // Categories and keep 64 in scope.
+    categories: [{ label: 'Purchases', categoryRoots: ['60', '61', '62'] }],
+    scope: ['6'],
+  });
+
+  // 641000 and 645000 are in scope (class 6) and under no Category.
+  expect(report?.unmatched.accounts.map((account) => account.code)).toEqual(['641000', '645000']);
+});
+
+test('nothing in scope disappears from a scoped ProfitAndLoss either', async () => {
+  for (const [name, payload] of Object.entries(fixtures)) {
+    const reports = await buildReports(inChunks(payload), {
+      ...matchesNothingButPurchases,
+      kind: 'ProfitAndLoss',
+      scope: ['6', '7'],
+    });
+
+    for (const report of reports) {
+      const inReport = [...report.categories, report.unmatched].reduce(
+        (sum, category) => sum + toCents(category.total),
+        0n,
+      );
+
+      // The oracle: revenue and expense Accounts' net, straight off the payload.
+      expect(inReport, `${name}, ${report.period}`).toBe(
+        netByPeriod(payload, (code) => code.startsWith('6') || code.startsWith('7')).get(
+          report.period,
+        ) ?? 0n,
+      );
+    }
+  }
+});
+
+test('nothing disappears from a BalanceSheet with a Result and a scope', async () => {
+  const reports = await buildReports(inChunks(openingBalanceAndOrdinaryEntries), {
+    ...balanceSheet,
+    scope: ['1', '2', '3', '4', '5'],
+  });
+
+  for (const report of reports) {
+    const inReport = [...report.categories, report.unmatched].reduce(
+      (sum, category) => sum + toCents(category.total),
+      0n,
+    );
+
+    expect(inReport).toBe(netByPeriod(openingBalanceAndOrdinaryEntries).get(report.period));
+  }
+});

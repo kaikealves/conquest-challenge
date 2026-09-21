@@ -33,6 +33,13 @@ export type Category = {
 };
 
 export type Report = {
+  /**
+   * The Accounts no Category claimed, gathered rather than dropped so an
+   * incomplete ReportTemplate shows up as a figure. Always present: a template
+   * that covers everything has an empty one, and an absent group would be
+   * indistinguishable from a Report that never checked.
+   */
+  readonly unmatched: Category;
   readonly templateId: string;
   readonly templateName: string;
   readonly period: string;
@@ -98,6 +105,14 @@ export async function totalByAccountAndPeriod(
 function matches(account: AccountCode, category: CategoryDefinition | ResultDefinition): boolean {
   return specificityUnder(account, category.categoryRoots) !== undefined;
 }
+
+/** Whether the template answers for this Account; one with no `scope` answers for all. */
+function inScope(account: AccountCode, template: ReportTemplate): boolean {
+  return template.scope === undefined || specificityUnder(account, template.scope) !== undefined;
+}
+
+/** The label of the group holding Accounts no Category claimed. */
+const UNMATCHED_LABEL = 'Unmatched';
 
 /** The tree while it is still Money. Decimals are produced once, at the edge. */
 type CategoryTotal = {
@@ -216,42 +231,46 @@ function forKind(account: AccountTotal, kind: ReportKind): AccountTotal {
     : account;
 }
 
-/**
- * The Result: the net of the revenue and expense Accounts, taken as they are
- * ledgered (a credit negative), so that it sits among the BalanceSheet's
- * Categories and they net to zero.
- */
-function resultCategory(
-  definition: ResultDefinition,
+/** The Accounts a Category of this label holds, as one Category of no children. */
+function flatCategory(
+  label: string,
   accounts: readonly AccountTotal[],
-  placement: ReadonlyMap<string, CategoryDefinition>,
   currency: Currency,
 ): Category {
-  // Listed, not just summed, so a user can see which revenue and expense
-  // Accounts make up the figure and the total stays the sum of what is under it.
-  // An Account already placed in a chart Category stays there: it is in exactly
-  // one Category even if a template's Result roots overlap its chart roots.
-  const matched = accounts.filter(
-    ({ account }) => !placement.has(account.value) && matches(account, definition),
-  );
-  const total = matched.reduce<Money>(
+  const total = accounts.reduce<Money>(
     (running, account) => add(running, account.total),
     zero(currency),
   );
 
-  return toCategory({ label: definition.label, total, children: [], accounts: matched });
+  return toCategory({ label, total, children: [], accounts });
+}
+
+/**
+ * The Result: the net of the revenue and expense Accounts, taken as they are
+ * ledgered (a credit negative), so that it sits among the BalanceSheet's
+ * Categories and they net to zero.
+ *
+ * Listed, not just summed, so a user can see which revenue and expense Accounts
+ * make up the figure and the total stays the sum of what is under it.
+ */
+function resultAccounts(
+  definition: ResultDefinition,
+  accounts: readonly AccountTotal[],
+  placement: ReadonlyMap<string, CategoryDefinition>,
+): AccountTotal[] {
+  // An Account already placed in a chart Category stays there: it is in exactly
+  // one Category even if a template's Result roots overlap its chart roots.
+  return accounts.filter(
+    ({ account }) => !placement.has(account.value) && matches(account, definition),
+  );
 }
 
 /**
  * Aggregates Account totals into the Categories a ReportTemplate defines.
  *
- * One deliberate gap, owned by a later ticket and visible here rather than
- * buried: an Account matched by no Category is dropped. Ticket 09 surfaces
- * those, so an incomplete template is visible rather than quietly losing money.
- *
  * Which Category an Account lands in is `placeAccounts`' decision. The Result
  * takes its own Accounts by its own CategoryRoots, from those no chart Category
- * has claimed.
+ * has claimed. Anything neither takes is gathered into `unmatched`.
  */
 export function buildReport(
   totals: AccountTotals,
@@ -264,6 +283,19 @@ export function buildReport(
   const categories = template.categories.map((category) =>
     toCategory(aggregateCategory(category, placement, accounts, currency)),
   );
+  const forResult = template.result ? resultAccounts(template.result, accounts, placement) : [];
+  const claimedByResult = new Set(forResult.map(({ account }) => account.value));
+
+  // Whatever neither a Category nor the Result took, among the Accounts the
+  // template answers for. Together the three cover every Account in scope, so an
+  // amount the template is responsible for cannot fall between the ledger and
+  // the Report.
+  const leftOver = accounts.filter(
+    ({ account }) =>
+      !placement.has(account.value) &&
+      !claimedByResult.has(account.value) &&
+      inScope(account, template),
+  );
 
   return {
     templateId: template.id,
@@ -271,7 +303,8 @@ export function buildReport(
     period,
     currency,
     categories: template.result
-      ? [...categories, resultCategory(template.result, accounts, placement, currency)]
+      ? [...categories, flatCategory(template.result.label, forResult, currency)]
       : categories,
+    unmatched: flatCategory(UNMATCHED_LABEL, leftOver, currency),
   };
 }

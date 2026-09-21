@@ -59,7 +59,7 @@ test('the index lists each ReportTemplate with the Periods it has Reports for', 
 
 test('a Report carries its Categories, their children and the Accounts within them', async () => {
   const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
-  const categories = everyCategory(report.categories);
+  const categories = everyCategory([...report.categories, report.unmatched]);
 
   expect(categories.length).toBeGreaterThan(report.categories.length);
   expect(categories.some((category) => category.accounts.length > 0)).toBe(true);
@@ -78,7 +78,7 @@ test('a Report carries its Categories, their children and the Accounts within th
 test("a Category's total is its children plus the Accounts it holds directly", async () => {
   const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
 
-  for (const category of everyCategory(report.categories)) {
+  for (const category of everyCategory([...report.categories, report.unmatched])) {
     if (category.children.length === 0 && category.accounts.length === 0) continue;
 
     expect(Number(category.total)).toBe(sumOfParts(category));
@@ -87,7 +87,7 @@ test("a Category's total is its children plus the Accounts it holds directly", a
 
 test('an Account appears exactly once across the whole Report', async () => {
   const report = (await (await get(reportUrl('french-profit-and-loss', '2016'))).json()) as Report;
-  const codes = everyCategory(report.categories).flatMap((category) =>
+  const codes = everyCategory([...report.categories, report.unmatched]).flatMap((category) =>
     category.accounts.map((account) => account.code),
   );
 

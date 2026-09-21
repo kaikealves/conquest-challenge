@@ -21,6 +21,19 @@ A Report of revenue and expense Accounts over a Period. Excludes OpeningBalance
 Entries.
 _Avoid_: P&L, PnL, income statement, earnings
 
+**Unmatched**:
+The group in every Report holding the Accounts a ReportTemplate answers for but
+no Category claims, with their total. It makes an incomplete ReportTemplate a
+figure instead of a silent loss, and is present, and empty, when nothing is
+missing.
+_Avoid_: other, miscellaneous, uncategorised, suspense
+
+**Scope**:
+The Accounts a ReportTemplate answers for, as CategoryRoots. A ProfitAndLoss
+answers for revenue and expense Accounts, so a balance-sheet Account is out of
+its scope rather than Unmatched.
+_Avoid_: filter, range, coverage
+
 **ReportKind**:
 Whether a Report is a BalanceSheet or a ProfitAndLoss. It decides how a
 carried-forward balance is treated: a BalanceSheet includes OpeningBalance

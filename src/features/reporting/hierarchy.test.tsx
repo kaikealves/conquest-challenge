@@ -102,6 +102,7 @@ test('nesting is not limited to two levels', async () => {
         templateName: 'Profit and loss',
         period: '2016',
         currency: 'EUR',
+        unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
         categories: [nest(1)],
       }),
     ),

@@ -51,6 +51,12 @@ export type Category = {
 };
 
 export type Report = {
+  /**
+   * The Accounts no Category claimed, so an incomplete ReportTemplate is a figure
+   * and not a silent loss. Always present, and empty when the template covers
+   * everything. Shaped as a Category, with no children.
+   */
+  readonly unmatched: Category;
   /** Stable identifier used in the URL. Never the display name. */
   readonly templateId: string;
   readonly templateName: string;

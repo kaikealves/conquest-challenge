@@ -28,7 +28,7 @@ const templates: ReportTemplateIndex = {
 
 /**
  * The Category labels are the ones `tools/importer/templates/french-profit-and-loss.json`
- * produces — all three parents, so a test cannot pass while the application
+ * produces — every parent, so a test cannot pass while the application
  * silently drops one.
  *
  * The figures are invented. The sample ledger under `brief/` is a third party's
@@ -69,6 +69,7 @@ function categoriesFor(scale: number): Report['categories'] {
         },
         { label: 'Staff costs', total: at(0), children: [], accounts: [] },
         { label: 'Other operating expenses', total: at(0), children: [], accounts: [] },
+        { label: 'Depreciation and provisions', total: at(0), children: [], accounts: [] },
       ],
     },
     {
@@ -109,11 +110,45 @@ function categoriesFor(scale: number): Report['categories'] {
         },
       ],
     },
+    {
+      label: 'Exceptional',
+      total: at(10),
+      accounts: [],
+      children: [
+        {
+          label: 'Exceptional expenses',
+          total: at(10),
+          children: [],
+          accounts: [{ code: '671000', name: 'Charges exceptionnelles', total: at(10) }],
+        },
+        { label: 'Exceptional income', total: at(0), children: [], accounts: [] },
+      ],
+    },
+    { label: 'Income tax', total: at(0), children: [], accounts: [] },
   ];
+}
+
+/**
+ * A period with an incomplete template shows one Account in the unmatched group;
+ * the others show it empty, as a complete template does. 2015's is the one, so a
+ * test can see both.
+ */
+function unmatchedFor(period: string, scale: number): Report['unmatched'] {
+  const total = (40 * scale).toFixed(2);
+
+  return period === '2015'
+    ? {
+        label: 'Unmatched',
+        total,
+        children: [],
+        accounts: [{ code: '471000', name: 'Compte d’attente', total }],
+      }
+    : { label: 'Unmatched', total: '0.00', children: [], accounts: [] };
 }
 
 function reportFor(period: string, scale: number): Report {
   return {
+    unmatched: unmatchedFor(period, scale),
     templateId: 'french-profit-and-loss',
     templateName: 'Profit and loss',
     period,
@@ -132,6 +167,7 @@ const balanceSheetFor = (period: string): Report => ({
   templateName: 'Balance sheet',
   period,
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories: [
     {
       label: 'Assets',

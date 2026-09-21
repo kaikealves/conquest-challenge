@@ -48,6 +48,7 @@ const aReportWith = (categories: unknown[]) => ({
   templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories,
 });
 
@@ -166,4 +167,31 @@ test('two views of the same Report make one request, not two', async () => {
   await screen.findAllByRole('table');
 
   expect(requested).toHaveLength(1);
+});
+
+test('a Report with no Categories but money in the unmatched group is still shown', async () => {
+  respondWith(200, {
+    ...aReportWith([]),
+    unmatched: {
+      label: 'Unmatched',
+      total: '9.00',
+      children: [],
+      accounts: [{ code: '999', name: 'Lost', total: '9.00' }],
+    },
+  });
+  renderApp();
+
+  // Nothing to show would hide exactly the money the group exists to surface.
+  expect(await screen.findByText(/1 Account matched none/)).toBeVisible();
+  expect(screen.queryByText(/This Report has no Categories/)).not.toBeInTheDocument();
+});
+
+test('a payload without the unmatched group is a failed load, not a blank page', async () => {
+  // `undefined` is left out of JSON, so the field is absent on the wire.
+  respondWith(200, { ...aReportWith([]), unmatched: undefined });
+  renderApp();
+
+  // An older file left behind next to a newer bundle: the contract says the
+  // group is always there, so its absence means the Report cannot be trusted.
+  expect(await screen.findByRole('button', { name: /try again/i })).toBeVisible();
 });

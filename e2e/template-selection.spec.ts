@@ -12,6 +12,7 @@ const reportNamed = (id: string, name: string, label: string) => ({
   templateName: name,
   period: '2016',
   currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
   categories: [{ label, total: '1.00', children: [], accounts: [] }],
 });
 
