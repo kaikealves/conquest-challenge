@@ -1,11 +1,6 @@
-import { ReportScreen } from './features/reporting/ReportScreen.tsx';
+import { Route, Routes } from 'react-router';
 
-/**
- * Fixed until tickets 14 and 15 put the ReportTemplate and Period in the URL,
- * so a Report can be bookmarked and shared.
- */
-const TEMPLATE_ID = 'french-chart';
-const PERIOD = '2016';
+import { ReportsPage } from './features/reporting/ReportsPage.tsx';
 
 export function App() {
   return (
@@ -17,7 +12,11 @@ export function App() {
         </p>
       </header>
 
-      <ReportScreen templateId={TEMPLATE_ID} period={PERIOD} />
+      <Routes>
+        <Route path="/" element={<ReportsPage />} />
+        <Route path="/reports/:templateId" element={<ReportsPage />} />
+        <Route path="*" element={<p>There is no page at this address.</p>} />
+      </Routes>
     </main>
   );
 }

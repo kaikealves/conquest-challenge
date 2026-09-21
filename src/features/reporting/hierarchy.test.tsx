@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
 
-import { reportUrl } from './api/contract.ts';
+import { REPORT_URL_PATTERN } from './api/contract.ts';
 import { server } from '../../shared/mocks/node.ts';
 import { renderApp } from '../../shared/testing/renderApp.tsx';
 
@@ -96,7 +96,7 @@ test('nesting is not limited to two levels', async () => {
   });
 
   server.use(
-    http.get(reportUrl(':templateId', ':period'), () =>
+    http.get(REPORT_URL_PATTERN, () =>
       HttpResponse.json({
         templateId: 'french-chart',
         templateName: 'French chart of accounts',

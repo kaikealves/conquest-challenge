@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { afterEach, expect, test } from 'vitest';
 
-import { reportUrl } from './api/contract.ts';
+import { REPORT_URL_PATTERN } from './api/contract.ts';
 import { ReportScreen } from './ReportScreen.tsx';
 import { server } from '../../shared/mocks/node.ts';
 import { createQueryClient } from '../../shared/queryClient.ts';
@@ -40,9 +40,7 @@ function renderScreen(templateId: string, period: string) {
 }
 
 function respondWith(status: number, body: Record<string, unknown>) {
-  server.use(
-    http.get(reportUrl(':templateId', ':period'), () => HttpResponse.json(body, { status })),
-  );
+  server.use(http.get(REPORT_URL_PATTERN, () => HttpResponse.json(body, { status })));
 }
 
 const aReportWith = (categories: unknown[]) => ({
@@ -58,7 +56,10 @@ afterEach(() => {
 });
 
 test('a Report in flight says so, and stops saying so once it arrives', async () => {
-  renderApp();
+  // The Report screen alone: rendered through the application, the list of
+  // ReportTemplates loads first and the Report's own loading state is not there
+  // to observe on the first render.
+  renderScreen('french-chart', '2016');
 
   expect(screen.getByText('Loading the Report…')).toBeVisible();
 
@@ -67,7 +68,7 @@ test('a Report in flight says so, and stops saying so once it arrives', async ()
 });
 
 test('each state is announced to a reader who cannot see the screen', async () => {
-  renderApp();
+  renderScreen('french-chart', '2016');
 
   // One live region, mounted before its content changes, so every transition is
   // announced — including the Report arriving, which nothing else marks.
@@ -95,7 +96,7 @@ test('retrying a failed request loads the Report, without reloading the page', a
   let recovered = false;
 
   server.use(
-    http.get(reportUrl(':templateId', ':period'), () =>
+    http.get(REPORT_URL_PATTERN, () =>
       recovered
         ? HttpResponse.json(
             aReportWith([{ label: 'Purchases', total: '10.00', children: [], accounts: [] }]),
