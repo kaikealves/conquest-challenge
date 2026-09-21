@@ -1,4 +1,4 @@
-import { isUnder, type AccountCode } from '../domain/accountCode.ts';
+import { specificityUnder, type AccountCode } from '../domain/accountCode.ts';
 import { reportedAccount, reportedAccountName, type Entry } from '../domain/entry.ts';
 import { add, moneyToDecimal, subtract, zero, type Currency, type Money } from '../domain/money.ts';
 import type {
@@ -96,7 +96,7 @@ export async function totalByAccountAndPeriod(
 }
 
 function matches(account: AccountCode, category: CategoryDefinition | ResultDefinition): boolean {
-  return category.categoryRoots.some((categoryRoot) => isUnder(account, categoryRoot));
+  return specificityUnder(account, category.categoryRoots) !== undefined;
 }
 
 /** The tree while it is still Money. Decimals are produced once, at the edge. */
@@ -107,34 +107,83 @@ type CategoryTotal = {
   readonly accounts: readonly AccountTotal[];
 };
 
-function accountCodesIn(category: CategoryTotal): string[] {
-  return [
-    ...category.accounts.map(({ account }) => account.value),
-    ...category.children.flatMap(accountCodesIn),
-  ];
+type Claim = {
+  readonly category: CategoryDefinition;
+  readonly specificity: number;
+  readonly depth: number;
+};
+
+/** Whether `challenger` should take an Account from `holder`. */
+function outranks(challenger: Claim, holder: Claim): boolean {
+  if (challenger.specificity !== holder.specificity) {
+    return challenger.specificity > holder.specificity;
+  }
+
+  // Equally specific: the nested Category is the more precise place for it. A
+  // tie beyond that is never taken from the holder, which is the Category written
+  // first, so the outcome is set by the template and not by traversal luck.
+  return challenger.depth > holder.depth;
 }
 
 /**
- * Builds one Category and everything beneath it.
+ * Decides which one Category each Account belongs to, across the whole template.
  *
- * An Account is placed at the deepest Category matching it, so it is counted and
- * listed exactly once; a parent's total is its children's totals plus whatever
- * it holds directly.
+ * An Account matched by several Categories — a parent and its child, or two
+ * siblings whose CategoryRoots overlap — goes to the one with the longest
+ * matching CategoryRoot: `706` is a narrower claim than `70`. Where that ties, the
+ * deeper Category wins, and where that ties too, the one written first. So every
+ * Account is in at most one Category and no amount is counted twice.
+ *
+ * Accounts absent from the result matched nothing.
+ */
+function placeAccounts(
+  categories: readonly CategoryDefinition[],
+  accounts: readonly AccountTotal[],
+): ReadonlyMap<string, CategoryDefinition> {
+  const placed = new Map<string, Claim>();
+
+  const visit = (category: CategoryDefinition, depth: number): void => {
+    for (const { account } of accounts) {
+      const specificity = specificityUnder(account, category.categoryRoots);
+
+      if (specificity === undefined) {
+        continue;
+      }
+
+      const claim = { category, specificity, depth };
+      const holder = placed.get(account.value);
+
+      if (holder === undefined || outranks(claim, holder)) {
+        placed.set(account.value, claim);
+      }
+    }
+
+    category.children?.forEach((child) => {
+      visit(child, depth + 1);
+    });
+  };
+
+  categories.forEach((category) => {
+    visit(category, 0);
+  });
+
+  return new Map([...placed].map(([code, { category }]) => [code, category]));
+}
+
+/**
+ * Builds one Category and everything beneath it: its children's totals plus the
+ * Accounts placed directly on it.
  */
 function aggregateCategory(
   definition: CategoryDefinition,
-  candidates: readonly AccountTotal[],
+  placement: ReadonlyMap<string, CategoryDefinition>,
+  accounts: readonly AccountTotal[],
   currency: Currency,
 ): CategoryTotal {
-  const mine = candidates.filter((account) => matches(account.account, definition));
-  const definedChildren = definition.children ?? [];
-  const children = definedChildren.map((child) => aggregateCategory(child, mine, currency));
-
-  // Taken from the subtrees just built rather than by matching against each
-  // child again: that repeats work the recursion has done, and it would disagree
-  // with the tree if a child ever placed an Account somewhere unexpected.
-  const claimedByAChild = new Set(children.flatMap(accountCodesIn));
-  const direct = mine.filter(({ account }) => !claimedByAChild.has(account.value));
+  const children = (definition.children ?? []).map((child) =>
+    aggregateCategory(child, placement, accounts, currency),
+  );
+  const direct = accounts.filter(({ account }) => placement.get(account.value) === definition);
 
   const total = [...children, ...direct].reduce<Money>(
     (running, part) => add(running, part.total),
@@ -175,11 +224,16 @@ function forKind(account: AccountTotal, kind: ReportKind): AccountTotal {
 function resultCategory(
   definition: ResultDefinition,
   accounts: readonly AccountTotal[],
+  placement: ReadonlyMap<string, CategoryDefinition>,
   currency: Currency,
 ): Category {
   // Listed, not just summed, so a user can see which revenue and expense
   // Accounts make up the figure and the total stays the sum of what is under it.
-  const matched = accounts.filter(({ account }) => matches(account, definition));
+  // An Account already placed in a chart Category stays there: it is in exactly
+  // one Category even if a template's Result roots overlap its chart roots.
+  const matched = accounts.filter(
+    ({ account }) => !placement.has(account.value) && matches(account, definition),
+  );
   const total = matched.reduce<Money>(
     (running, account) => add(running, account.total),
     zero(currency),
@@ -191,16 +245,13 @@ function resultCategory(
 /**
  * Aggregates Account totals into the Categories a ReportTemplate defines.
  *
- * Two deliberate gaps, both owned by later tickets and visible here rather than
- * buried:
+ * One deliberate gap, owned by a later ticket and visible here rather than
+ * buried: an Account matched by no Category is dropped. Ticket 09 surfaces
+ * those, so an incomplete template is visible rather than quietly losing money.
  *
- * - An Account matched by two *sibling* Categories is counted in both. The spec
- *   says an Account matches at most one Category, the most specific winning;
- *   ticket 08 owns that. Today's templates use disjoint sibling CategoryRoots.
- *   Parent and child overlapping is not this problem: that is resolved here, by
- *   placing an Account at the deepest Category matching it.
- * - An Account matched by no Category is dropped. Ticket 09 surfaces those, so
- *   an incomplete template is visible rather than quietly losing money.
+ * Which Category an Account lands in is `placeAccounts`' decision. The Result
+ * takes its own Accounts by its own CategoryRoots, from those no chart Category
+ * has claimed.
  */
 export function buildReport(
   totals: AccountTotals,
@@ -209,8 +260,9 @@ export function buildReport(
   currency: Currency,
 ): Report {
   const accounts = [...totals.values()].map((account) => forKind(account, template.kind));
+  const placement = placeAccounts(template.categories, accounts);
   const categories = template.categories.map((category) =>
-    toCategory(aggregateCategory(category, accounts, currency)),
+    toCategory(aggregateCategory(category, placement, accounts, currency)),
   );
 
   return {
@@ -219,7 +271,7 @@ export function buildReport(
     period,
     currency,
     categories: template.result
-      ? [...categories, resultCategory(template.result, accounts, currency)]
+      ? [...categories, resultCategory(template.result, accounts, placement, currency)]
       : categories,
   };
 }

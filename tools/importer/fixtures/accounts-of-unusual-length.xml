@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Revenue Accounts whose codes run from two to eleven characters:
+    70           2 characters, shorter than the longest CategoryRoot below
+    706          3 characters
+    706000       6 characters
+    70600000001  11 characters, longer than any code a chart is usually written with
+    701000       6 characters, under 70 but not under 706
+
+  Purpose: matching is on the code's prefix whatever its length. A short code
+  meeting a longer CategoryRoot is not an error and does not match it, and a long
+  code meets a short root without being cut to six characters first.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>70</number><name>Ventes (2)</name>
+      <debit>0</debit><credit>1.00</credit><currency>EUR</currency>
+      <date>2016-07-01</date><internalID>{U1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>706</number><name>Services (3)</name>
+      <debit>0</debit><credit>2.00</credit><currency>EUR</currency>
+      <date>2016-07-02</date><internalID>{U2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>706000</number><name>Services (6)</name>
+      <debit>0</debit><credit>4.00</credit><currency>EUR</currency>
+      <date>2016-07-03</date><internalID>{U3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>70600000001</number><name>Services (11)</name>
+      <debit>0</debit><credit>8.00</credit><currency>EUR</currency>
+      <date>2016-07-04</date><internalID>{U4}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>701000</number><name>Marchandises (6)</name>
+      <debit>0</debit><credit>16.00</credit><currency>EUR</currency>
+      <date>2016-07-05</date><internalID>{U5}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

@@ -1,6 +1,7 @@
 import { expect, test } from 'vitest';
 
 import accountsAcrossNestedCategories from './fixtures/accounts-across-nested-categories.xml?raw';
+import accountsOfUnusualLength from './fixtures/accounts-of-unusual-length.xml?raw';
 import amountsBeyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import amountsThatBreakFloatingPoint from './fixtures/amounts-that-break-floating-point.xml?raw';
 import anEntryCarryingBothColumns from './fixtures/an-entry-carrying-both-columns.xml?raw';
@@ -10,6 +11,7 @@ import journalsThatOnlyLookLikeOpeningBalances from './fixtures/journals-that-on
 import openingBalanceAndOrdinaryEntries from './fixtures/opening-balance-and-ordinary-entries.xml?raw';
 import purchasesAcrossTwoFiscalYears from './fixtures/purchases-across-two-fiscal-years.xml?raw';
 import { buildReports } from './buildReports.ts';
+import type { Category, Report } from './reporting/report.ts';
 import type { ReportTemplate } from './reporting/reportTemplate.ts';
 
 /**
@@ -270,4 +272,170 @@ test('a ControlAccount posted to directly keeps its own name, in whatever order 
     { code: '512000', name: 'Banque', total: '3.00' },
     { code: '530000', name: 'Caisse', total: '2.00' },
   ]);
+});
+
+/** Every Account a Report lists, wherever it sits, as code → total. */
+function listedAccounts(categories: readonly Category[]): [string, string][] {
+  return categories.flatMap((category) => [
+    ...category.accounts.map((account): [string, string] => [account.code, account.total]),
+    ...listedAccounts(category.children),
+  ]);
+}
+
+const revenue = (roots: string[], services: string[]): ReportTemplate => ({
+  id: 'revenue',
+  name: 'Revenue',
+  kind: 'ProfitAndLoss',
+  categories: [
+    { label: 'Revenue', categoryRoots: roots },
+    { label: 'Services', categoryRoots: services },
+  ],
+});
+
+async function revenueReport(template: ReportTemplate) {
+  const [report] = await buildReports(inChunks(accountsOfUnusualLength), template);
+
+  return report;
+}
+
+const totalOf = (report: Report | undefined, label: string) =>
+  report?.categories.find((category) => category.label === label)?.total;
+
+test('an Account whose code is shorter than a CategoryRoot is left out of it, without error', async () => {
+  // 70 and 706 are both shorter than the root 706000, so neither is listed.
+  const report = await revenueReport(revenue(['701000'], ['706000']));
+
+  expect(listedAccounts(report?.categories ?? [])).toEqual([
+    ['701000', '-16.00'],
+    ['706000', '-4.00'],
+    ['70600000001', '-8.00'],
+  ]);
+});
+
+test('an Account with a code longer than six characters is matched on its prefix', async () => {
+  const report = await revenueReport(revenue(['9'], ['706']));
+
+  // The 11-character code sits under 706 without being truncated or parsed.
+  expect(listedAccounts(report?.categories ?? [])).toContainEqual(['70600000001', '-8.00']);
+  expect(totalOf(report, 'Services')).toBe('-14.00');
+});
+
+test('an Account of three characters matches a three-character CategoryRoot exactly', async () => {
+  const report = await revenueReport(revenue(['9'], ['706']));
+
+  expect(listedAccounts(report?.categories ?? [])).toContainEqual(['706', '-2.00']);
+});
+
+test('where sibling CategoryRoots overlap, the most specific one wins', async () => {
+  // Revenue takes everything under 70; Services takes what is under 706.
+  const report = await revenueReport(revenue(['70'], ['706']));
+
+  expect(totalOf(report, 'Services')).toBe('-14.00');
+  expect(totalOf(report, 'Revenue')).toBe('-17.00');
+});
+
+test('an Account is listed once, so no amount is counted twice', async () => {
+  const report = await revenueReport(revenue(['70'], ['706']));
+  const codes = listedAccounts(report?.categories ?? []).map(([code]) => code);
+
+  expect(new Set(codes).size).toBe(codes.length);
+  // Five Accounts, 31.00 in all, and the two Categories account for exactly that.
+  expect(codes).toHaveLength(5);
+  expect(Number(totalOf(report, 'Revenue')) + Number(totalOf(report, 'Services'))).toBe(-31);
+});
+
+test('which sibling wins does not depend on the order the Categories are written in', async () => {
+  const forward = await revenueReport(revenue(['70'], ['706']));
+  const reversed = await revenueReport({
+    ...revenue(['70'], ['706']),
+    categories: [...revenue(['70'], ['706']).categories].reverse(),
+  });
+
+  expect(totalOf(reversed, 'Services')).toBe(totalOf(forward, 'Services'));
+  expect(totalOf(reversed, 'Revenue')).toBe(totalOf(forward, 'Revenue'));
+});
+
+test('when two Categories match an Account equally well, the first one written takes it', async () => {
+  const report = await revenueReport(revenue(['706'], ['706']));
+
+  expect(totalOf(report, 'Revenue')).toBe('-14.00');
+  expect(totalOf(report, 'Services')).toBe('0.00');
+});
+
+test('a CategoryRoot longer than the parent’s claims an Account for a nested Category over a sibling of the parent', async () => {
+  const template: ReportTemplate = {
+    id: 'nested-and-sibling',
+    name: 'Nested and sibling',
+    kind: 'ProfitAndLoss',
+    categories: [
+      {
+        label: 'Sales',
+        categoryRoots: ['70'],
+        children: [{ label: 'Goods', categoryRoots: ['701'] }],
+      },
+      { label: 'Services', categoryRoots: ['706'] },
+    ],
+  };
+  const report = await revenueReport(template);
+
+  // 706… goes to the sibling Services (root 706), not to Sales (root 70); 701000
+  // goes to the child Goods (root 701), not to its parent.
+  expect(totalOf(report, 'Services')).toBe('-14.00');
+  expect(report?.categories[0]?.children[0]?.total).toBe('-16.00');
+  expect(totalOf(report, 'Sales')).toBe('-17.00');
+});
+
+test('a Category with several CategoryRoots is as specific as its longest matching one', async () => {
+  // Revenue has both a short and a long root; Services has one in between. The
+  // account 706000 is under all three, and Revenue's 7060 is the narrowest.
+  const template: ReportTemplate = {
+    id: 'several-roots',
+    name: 'Several roots',
+    kind: 'ProfitAndLoss',
+    categories: [
+      { label: 'Services', categoryRoots: ['706'] },
+      { label: 'Revenue', categoryRoots: ['70', '7060'] },
+    ],
+  };
+  const report = await revenueReport(template);
+
+  // 706000 and 70600000001 are under 7060, and 70 and 701000 only under 70; 706 is
+  // under Services' longer root, so it stays there.
+  expect(totalOf(report, 'Revenue')).toBe('-29.00');
+  expect(totalOf(report, 'Services')).toBe('-2.00');
+});
+
+test('a child Category may claim an Account its parent’s own roots do not select', async () => {
+  const template: ReportTemplate = {
+    id: 'child-outside-parent',
+    name: 'Child outside parent',
+    kind: 'ProfitAndLoss',
+    categories: [
+      {
+        label: 'Services',
+        categoryRoots: ['706'],
+        children: [{ label: 'Goods', categoryRoots: ['701'] }],
+      },
+    ],
+  };
+  const report = await revenueReport(template);
+
+  // The parent's total is everything beneath it: its own 706 Accounts and the
+  // child's 701000, which the parent's roots alone would not have taken.
+  expect(report?.categories[0]?.children[0]?.total).toBe('-16.00');
+  expect(totalOf(report, 'Services')).toBe('-30.00');
+});
+
+test('an Account a chart Category has claimed is not counted again in the Result', async () => {
+  const [report] = await buildReports(inChunks(accountsOfUnusualLength), {
+    id: 'overlapping-result',
+    name: 'Overlapping Result',
+    kind: 'BalanceSheet',
+    categories: [{ label: 'Services', categoryRoots: ['706'] }],
+    result: { label: 'Result', categoryRoots: ['70'] },
+  });
+
+  // 706… (-14.00) is Services'; the Result takes only the other two.
+  expect(totalOf(report, 'Services')).toBe('-14.00');
+  expect(totalOf(report, 'Result')).toBe('-17.00');
 });
