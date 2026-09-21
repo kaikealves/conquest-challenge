@@ -57,3 +57,24 @@ test('a Period with no Report is explained, and offers the Periods that exist', 
   await page.getByRole('link', { name: '2015' }).click();
   await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€100.00');
 });
+
+test('an address completed by redirect does not trap the Back button', async ({ page }) => {
+  await page.goto('about:blank');
+  await page.goto('/reports/alpha');
+  await expect(page).toHaveURL(/\/reports\/alpha\/2016$/);
+
+  await page.goBack();
+
+  // Back leaves the application rather than bouncing off the bare address.
+  await expect(page).toHaveURL('about:blank');
+});
+
+test('Back returns to the Period before', async ({ page }) => {
+  await page.goto('/reports/alpha/2016');
+  await page.getByRole('combobox', { name: 'Period' }).selectOption('2015');
+  await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€100.00');
+
+  await page.goBack();
+
+  await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€250.00');
+});

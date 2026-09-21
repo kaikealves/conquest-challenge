@@ -1,7 +1,10 @@
 import { screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
 import { expect, test } from 'vitest';
 
+import { templateIndexUrl } from './api/contract.ts';
+import { server } from '../../shared/mocks/node.ts';
 import { renderApp } from '../../shared/testing/renderApp.tsx';
 
 /**
@@ -59,22 +62,10 @@ test('a Period the ReportTemplate has no Report for is explained, not shown as a
   );
 });
 
-test('changing ReportTemplate keeps the Period when the new one has it', async () => {
+test('changing ReportTemplate keeps the Period, even when it is not the latest', async () => {
   const user = userEvent.setup();
-  renderApp('/reports/french-chart/2016');
-
-  await expensesRow();
-  await user.selectOptions(
-    await screen.findByRole('combobox', { name: 'Report template' }),
-    'Balance sheet',
-  );
-
-  expect(await screen.findByRole('row', { name: /Assets/ })).toBeInTheDocument();
-  expect(await chooser()).toHaveDisplayValue('2016');
-});
-
-test('changing ReportTemplate falls back to the latest Period when the new one lacks it', async () => {
-  const user = userEvent.setup();
+  // Both ReportTemplates have 2015 and 2016, and the user is on 2015: if the
+  // Period were dropped, the fallback would land on 2016 and this would show.
   renderApp('/reports/french-chart/2015');
 
   await expensesRow();
@@ -83,7 +74,30 @@ test('changing ReportTemplate falls back to the latest Period when the new one l
     'Balance sheet',
   );
 
-  // The balance sheet exists for 2016 only.
+  expect(await screen.findByRole('row', { name: /Assets/ })).toBeInTheDocument();
+  expect(await chooser()).toHaveDisplayValue('2015');
+});
+
+test('changing ReportTemplate falls back to the latest Period when the new one lacks it', async () => {
+  const user = userEvent.setup();
+  server.use(
+    http.get(templateIndexUrl(), () =>
+      HttpResponse.json({
+        templates: [
+          { id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] },
+          { id: 'balance-sheet', name: 'Balance sheet', periods: ['2016'] },
+        ],
+      }),
+    ),
+  );
+  renderApp('/reports/french-chart/2015');
+
+  await expensesRow();
+  await user.selectOptions(
+    await screen.findByRole('combobox', { name: 'Report template' }),
+    'Balance sheet',
+  );
+
   expect(await screen.findByRole('row', { name: /Assets/ })).toBeInTheDocument();
   expect(await chooser()).toHaveDisplayValue('2016');
 });
