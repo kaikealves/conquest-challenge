@@ -13,9 +13,7 @@ type ReportTableProps = {
  * Named for the shape it draws rather than for the Report itself, because the
  * Reporting glossary lists "view" among the words to avoid for a Report.
  *
- * Categories are rendered flat here. Ticket 13 makes them expandable to
- * arbitrary depth, which is why `CategoryRow` takes a Category rather than a
- * label and a total — the recursion has somewhere to go.
+ * Categories expand to arbitrary depth; `CategoryRow` recurses on itself.
  */
 export function ReportTable({ report }: ReportTableProps) {
   const headingId = useId();
