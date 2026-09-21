@@ -31,6 +31,11 @@ const report = {
 };
 
 test('expanding a Category down to its Accounts, and collapsing it again', async ({ page }) => {
+  await page.route('**/data/templates.json', (route) =>
+    route.fulfill({
+      json: { templates: [{ id: 'french-chart', name: report.templateName, periods: ['2016'] }] },
+    }),
+  );
   await page.route('**/data/reports/**', (route) => route.fulfill({ json: report }));
   await page.goto('/');
 

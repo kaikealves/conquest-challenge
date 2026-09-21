@@ -20,7 +20,10 @@ import {
  */
 
 const templates: ReportTemplateIndex = {
-  templates: [{ id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] }],
+  templates: [
+    { id: 'french-chart', name: 'French chart of accounts', periods: ['2015', '2016'] },
+    { id: 'balance-sheet', name: 'Balance sheet', periods: ['2016'] },
+  ],
 };
 
 /**
@@ -119,7 +122,33 @@ function reportFor(period: string, scale: number): Report {
   };
 }
 
+/**
+ * A second ReportTemplate, so a test can tell one Report from another by what
+ * is on screen. Its Categories are invented, like every figure in this file.
+ */
+const balanceSheet: Report = {
+  templateId: 'balance-sheet',
+  templateName: 'Balance sheet',
+  period: '2016',
+  currency: 'EUR',
+  categories: [
+    {
+      label: 'Assets',
+      total: '5000.00',
+      accounts: [{ code: '512000', name: 'Banque', total: '5000.00' }],
+      children: [],
+    },
+    {
+      label: 'Liabilities',
+      total: '-5000.00',
+      accounts: [{ code: '401000', name: 'Fournisseurs', total: '-5000.00' }],
+      children: [],
+    },
+  ],
+};
+
 const reports = new Map<string, Report>([
+  ['balance-sheet/2016', balanceSheet],
   ['french-chart/2016', reportFor('2016', 1)],
   ['french-chart/2015', reportFor('2015', 2)],
 ]);

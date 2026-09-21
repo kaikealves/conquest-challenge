@@ -58,7 +58,10 @@ afterEach(() => {
 });
 
 test('a Report in flight says so, and stops saying so once it arrives', async () => {
-  renderApp();
+  // The Report screen alone: rendered through the application, the list of
+  // ReportTemplates loads first and the Report's own loading state is not there
+  // to observe on the first render.
+  renderScreen('french-chart', '2016');
 
   expect(screen.getByText('Loading the Report…')).toBeVisible();
 
@@ -67,7 +70,7 @@ test('a Report in flight says so, and stops saying so once it arrives', async ()
 });
 
 test('each state is announced to a reader who cannot see the screen', async () => {
-  renderApp();
+  renderScreen('french-chart', '2016');
 
   // One live region, mounted before its content changes, so every transition is
   // announced — including the Report arriving, which nothing else marks.
