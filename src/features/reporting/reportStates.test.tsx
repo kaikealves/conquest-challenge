@@ -12,7 +12,12 @@ import { renderApp } from '../../shared/testing/renderApp.tsx';
 
 /**
  * What the application does while it is working, when it fails, and when there
- * is nothing to show. Asserted through the rendered application against MSW.
+ * is nothing to show.
+ *
+ * Most of these render the whole application against MSW. Two do not: the
+ * Period rule needs the Period to change, which no user can do until ticket 15
+ * puts it in the URL, and the deduplication rule needs two views of one Report.
+ * Both say so where they are.
  */
 function renderScreen(templateId: string, period: string) {
   const queryClient = createQueryClient();
@@ -25,7 +30,7 @@ function renderScreen(templateId: string, period: string) {
 
   return {
     ...result,
-    showing: (nextPeriod: string) =>
+    changePeriodTo: (nextPeriod: string) =>
       result.rerender(
         <QueryClientProvider client={queryClient}>
           <ReportScreen templateId={templateId} period={nextPeriod} />
@@ -40,6 +45,14 @@ function respondWith(status: number, body: Record<string, unknown>) {
   );
 }
 
+const aReportWith = (categories: unknown[]) => ({
+  templateId: 'french-chart',
+  templateName: 'French chart of accounts',
+  period: '2016',
+  currency: 'EUR',
+  categories,
+});
+
 afterEach(() => {
   server.events.removeAllListeners();
 });
@@ -47,10 +60,22 @@ afterEach(() => {
 test('a Report in flight says so, and stops saying so once it arrives', async () => {
   renderApp();
 
-  expect(screen.getByRole('status')).toHaveTextContent(/loading/i);
+  expect(screen.getByText('Loading the Report…')).toBeVisible();
 
   expect(await screen.findByRole('table')).toBeVisible();
-  expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  expect(screen.queryByText('Loading the Report…')).not.toBeInTheDocument();
+});
+
+test('each state is announced to a reader who cannot see the screen', async () => {
+  renderApp();
+
+  // One live region, mounted before its content changes, so every transition is
+  // announced — including the Report arriving, which nothing else marks.
+  const announcement = screen.getByRole('status');
+
+  expect(announcement).toHaveTextContent(/loading/i);
+  await screen.findByRole('table');
+  expect(announcement).toHaveTextContent(/ready/i);
 });
 
 test('a failed request explains itself rather than showing nothing', async () => {
@@ -59,79 +84,70 @@ test('a failed request explains itself rather than showing nothing', async () =>
   respondWith(404, { message: 'No such Report.' });
   renderApp();
 
-  const alert = await screen.findByRole('alert');
-
-  expect(alert).toBeVisible();
-  expect(alert.textContent?.trim()).not.toBe('');
+  expect(await screen.findByText(/could not be loaded\. The connection/i)).toBeVisible();
+  expect(screen.getByRole('button', { name: /try again/i })).toBeVisible();
   expect(screen.queryByRole('table')).not.toBeInTheDocument();
 });
 
 test('retrying a failed request loads the Report, without reloading the page', async () => {
-  // The server is down for the first request and the one automatic retry that
-  // follows it, then recovers — so the user sees the failure and their own
-  // retry is what fixes it.
-  let attempts = 0;
+  // The server is down until the test lets it recover, so the number of
+  // automatic retries in the policy cannot change what this proves.
+  let recovered = false;
 
   server.use(
-    http.get(reportUrl(':templateId', ':period'), () => {
-      attempts += 1;
-
-      return attempts <= 2
-        ? HttpResponse.json({ message: 'The Report could not be produced.' }, { status: 500 })
-        : HttpResponse.json({
-            templateId: 'french-chart',
-            templateName: 'French chart of accounts',
-            period: '2016',
-            currency: 'EUR',
-            categories: [{ label: 'Purchases', total: '10.00', children: [], accounts: [] }],
-          });
-    }),
+    http.get(reportUrl(':templateId', ':period'), () =>
+      recovered
+        ? HttpResponse.json(
+            aReportWith([{ label: 'Purchases', total: '10.00', children: [], accounts: [] }]),
+          )
+        : HttpResponse.json({ message: 'The Report could not be produced.' }, { status: 503 }),
+    ),
   );
 
   renderApp();
-  // Longer than the default: the automatic retry happens before the user is
-  // told anything.
-  await screen.findByRole('alert', {}, { timeout: 5000 });
 
-  await userEvent.click(screen.getByRole('button', { name: /try again/i }));
+  const retry = await screen.findByRole('button', { name: /try again/i }, { timeout: 5000 });
+
+  recovered = true;
+  await userEvent.click(retry);
 
   expect(await screen.findByRole('table')).toBeVisible();
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(screen.queryByText(/could not be loaded\. The connection/i)).not.toBeInTheDocument();
 });
 
 test('changing the Period never shows the previous Period’s Report', async () => {
-  const { showing } = renderScreen('french-chart', '2016');
+  const { changePeriodTo } = renderScreen('french-chart', '2016');
 
   // 2016 and 2015 carry different figures in the fixtures, so the old total is
   // a thing that can be looked for and must not be there.
   await screen.findByText('€2,350.50');
 
-  showing('2015');
+  changePeriodTo('2015');
 
   // Checked immediately, with no waiting. `waitFor` would retry until the new
   // Report arrived and so would pass even if the old figures were on screen
   // the whole time in between — which is exactly the bug this guards against.
   expect(screen.queryByText('€2,350.50')).not.toBeInTheDocument();
-  expect(screen.getByRole('status')).toBeVisible();
+  expect(screen.getByText('Loading the Report…')).toBeVisible();
 
   expect(await screen.findByText('€4,701.00')).toBeVisible();
 });
 
 test('a Report with no Categories says so, and is not mistaken for a failure', async () => {
-  respondWith(200, {
-    templateId: 'french-chart',
-    templateName: 'French chart of accounts',
-    period: '2016',
-    currency: 'EUR',
-    categories: [],
-  });
+  respondWith(200, aReportWith([]));
   renderApp();
 
-  expect(await screen.findByText(/no categories/i)).toBeVisible();
-  expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+  expect(await screen.findByText(/has no Categories for Period/i)).toBeVisible();
+  // The discriminator a user acts on: nothing failed, so there is nothing to
+  // retry.
+  expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
+  expect(screen.getByRole('status')).toHaveTextContent(/no categories/i);
 });
 
 test('two views of the same Report make one request, not two', async () => {
+  // Below the application seam deliberately: no screen shows one Report twice,
+  // so the rule cannot be reached through the rendered application. It is here
+  // because ticket 12 lists it, not as a pattern to copy.
   const requested: string[] = [];
   server.events.on('request:start', ({ request }) => {
     if (request.url.includes('/data/reports/')) requested.push(request.url);
