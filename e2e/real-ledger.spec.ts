@@ -16,7 +16,10 @@ import { expect, test } from '@playwright/test';
 test.use({ baseURL: 'http://localhost:4174' });
 
 test('the importer’s own Reports are what the application shows', async ({ page }) => {
-  await page.goto('/');
+  // Not `/`: the importer now also writes a `french-balance-sheet` template,
+  // which sorts before this one alphabetically and would be what `/` redirects
+  // to, so the ReportTemplate this test is about is named explicitly.
+  await page.goto('/reports/french-profit-and-loss');
 
   await expect(page.getByRole('row', { name: /Operating expenses/ })).toContainText('€500.50');
   await expect(page.getByRole('combobox', { name: 'Period' })).toHaveValue('2016');
@@ -25,7 +28,7 @@ test('the importer’s own Reports are what the application shows', async ({ pag
 test('a Period the importer did not write is a plain not-found, not an error state', async ({
   page,
 }) => {
-  await page.goto('/reports/french-chart/1999');
+  await page.goto('/reports/french-profit-and-loss/1999');
 
   await expect(page.getByRole('alert')).toContainText('1999');
 });
@@ -33,7 +36,7 @@ test('a Period the importer did not write is a plain not-found, not an error sta
 test('a file the importer did not write answers 404, not the application shell', async ({
   request,
 }) => {
-  const response = await request.get('/data/reports/french-chart/1999.json');
+  const response = await request.get('/data/reports/french-profit-and-loss/1999.json');
 
   expect(response.status()).toBe(404);
   expect(response.headers()['content-type'] ?? '').not.toContain('text/html');
