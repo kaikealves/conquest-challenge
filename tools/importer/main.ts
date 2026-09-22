@@ -10,6 +10,7 @@ import type { Company } from './reporting/report.ts';
 import { templatesForCountry, type ReportTemplate } from './reporting/reportTemplate.ts';
 import type { ReportTemplateSummary } from './reporting/reportTemplateIndex.ts';
 import { slugify } from './slug.ts';
+import { upsertCompaniesIndex } from './upsertCompaniesIndex.ts';
 
 /**
  * The importer, run at build time. It stands in for the backend described in the
@@ -66,30 +67,6 @@ async function* payloadChunks(file: string): AsyncIterable<string> {
 async function writeJson(file: string, value: unknown): Promise<void> {
   await mkdir(path.dirname(file), { recursive: true });
   await writeFile(file, `${JSON.stringify(value, null, 2)}\n`, 'utf8');
-}
-
-async function readJson<T>(file: string, fallback: T): Promise<T> {
-  try {
-    return JSON.parse(await readFile(file, 'utf8')) as T;
-  } catch {
-    // No previous run, or its output was never written — a fresh start, not
-    // an error.
-    return fallback;
-  }
-}
-
-/**
- * Adds or replaces this Company's entry in `{outputRoot}/companies.json`,
- * leaving every other Company's entry as it was. Sorted by id, so the file's
- * content depends on which Companies have been imported, never on the order
- * they were imported in.
- */
-async function upsertCompaniesIndex(outputRoot: string, company: Company): Promise<void> {
-  const file = path.join(outputRoot, 'companies.json');
-  const existing = await readJson<{ companies: Company[] }>(file, { companies: [] });
-  const companies = [...existing.companies.filter((known) => known.id !== company.id), company];
-
-  await writeJson(file, { companies: companies.sort((a, b) => a.id.localeCompare(b.id)) });
 }
 
 async function main(): Promise<void> {
