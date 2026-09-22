@@ -24,6 +24,7 @@ async function* inChunks(payload: string, size = 64): AsyncIterable<string> {
 const template: ReportTemplate = {
   id: 'operating-expenses',
   name: 'Operating expenses',
+  country: 'FR',
   kind: 'ProfitAndLoss',
   categories: [
     {
@@ -49,7 +50,9 @@ function everyAmountIn(category: Category): string[] {
 
 test('what the importer writes satisfies the type the application reads', async () => {
   const [produced] = await buildReports(inChunks(accountsAcrossNestedCategories), template, {
+    id: 'contract-test-co',
     name: 'Contract Test Co',
+    country: 'FR',
   });
 
   // The annotation is the assertion, and deliberately not a cast: if the
@@ -71,7 +74,11 @@ test('what the importer writes satisfies the type the application reads', async 
       'unmatched',
     ].sort(),
   );
-  expect(report?.company).toEqual({ name: 'Contract Test Co' });
+  expect(report?.company).toEqual({
+    id: 'contract-test-co',
+    name: 'Contract Test Co',
+    country: 'FR',
+  });
   expect(report?.templateId).toBe('operating-expenses');
   expect(report?.period).toBe('2016');
   expect(report?.currency).toBe('EUR');

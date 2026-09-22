@@ -2,8 +2,10 @@ import { http, HttpResponse } from 'msw';
 
 import {
   REPORT_URL_PATTERN,
-  templateIndexUrl,
+  TEMPLATE_INDEX_URL_PATTERN,
+  companiesUrl,
   type ApiError,
+  type CompaniesIndex,
   type Report,
   type ReportTemplateIndex,
 } from '../../features/reporting/api/contract.ts';
@@ -14,21 +16,38 @@ import {
  * Per ADR-0007 these run in tests and development only; production fetches the
  * same URLs as static JSON the importer wrote. So these must answer with shapes
  * those files actually have — the Category labels below are the ones
- * `tools/importer/templates/french-profit-and-loss.json` produces, not invented ones, or
- * every test written against them from ticket 11 onward would assert Categories
- * production never returns.
+ * `tools/importer/templates/french-profit-and-loss.json` produces, not invented
+ * ones, or every test written against them from ticket 11 onward would assert
+ * Categories production never returns.
+ *
+ * Two Companies, so a test can exercise switching between them through
+ * `renderApp()` without a per-test override — the same reason ticket 14 gave
+ * for a second ReportTemplate.
  */
 
 /** Invented, like every other figure in this file — not the real ledger's owner. */
-const COMPANY = { name: 'Northwind Freight Cooperative' };
+const NORTHWIND = { id: 'northwind-freight', name: 'Northwind Freight Cooperative', country: 'FR' };
+const RIVERSIDE = { id: 'riverside-textiles', name: 'Riverside Textiles', country: 'GB' };
 
-const templates: ReportTemplateIndex = {
-  company: COMPANY,
+const companies: CompaniesIndex = { companies: [NORTHWIND, RIVERSIDE] };
+
+const northwindTemplates: ReportTemplateIndex = {
+  company: NORTHWIND,
   templates: [
     { id: 'french-profit-and-loss', name: 'Profit and loss', periods: ['2015', '2016'] },
     { id: 'french-balance-sheet', name: 'Balance sheet', periods: ['2015', '2016'] },
   ],
 };
+
+const riversideTemplates: ReportTemplateIndex = {
+  company: RIVERSIDE,
+  templates: [{ id: 'uk-profit-and-loss', name: 'Profit and loss', periods: ['2016'] }],
+};
+
+const templatesByCompany = new Map<string, ReportTemplateIndex>([
+  [NORTHWIND.id, northwindTemplates],
+  [RIVERSIDE.id, riversideTemplates],
+]);
 
 /**
  * The Category labels are the ones `tools/importer/templates/french-profit-and-loss.json`
@@ -152,7 +171,7 @@ function unmatchedFor(period: string, scale: number): Report['unmatched'] {
 
 function reportFor(period: string, scale: number): Report {
   return {
-    company: COMPANY,
+    company: NORTHWIND,
     unmatched: unmatchedFor(period, scale),
     templateId: 'french-profit-and-loss',
     templateName: 'Profit and loss',
@@ -163,12 +182,13 @@ function reportFor(period: string, scale: number): Report {
 }
 
 /**
- * A second ReportTemplate, so a test can tell one Report from another by what
- * is on screen. Its Categories are the ones `french-balance-sheet.json` produces
- * and its figures are invented; they net to zero, as a BalanceSheet's do.
+ * A second ReportTemplate under the same Company, so a test can tell one
+ * Report from another by what is on screen. Its Categories are the ones
+ * `french-balance-sheet.json` produces and its figures are invented; they net
+ * to zero, as a BalanceSheet's do.
  */
 const balanceSheetFor = (period: string): Report => ({
-  company: COMPANY,
+  company: NORTHWIND,
   templateId: 'french-balance-sheet',
   templateName: 'Balance sheet',
   period,
@@ -210,11 +230,65 @@ const balanceSheetFor = (period: string): Report => ({
   ],
 });
 
+/**
+ * A different Company's Report, on a structurally different chart — a UK-style
+ * convention (revenue starting with 4, not 7), not just a relabelling of
+ * Northwind's numbers. Mirrors `tools/importer/templates/uk-profit-and-loss.json`.
+ */
+const riversideProfitAndLoss: Report = {
+  company: RIVERSIDE,
+  templateId: 'uk-profit-and-loss',
+  templateName: 'Profit and loss',
+  period: '2016',
+  currency: 'EUR',
+  unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  categories: [
+    {
+      label: 'Turnover',
+      total: '-8400.00',
+      children: [],
+      accounts: [{ code: '4000', name: 'Sales', total: '-8400.00' }],
+    },
+    {
+      label: 'Cost of sales',
+      total: '2800.00',
+      children: [],
+      accounts: [{ code: '5000', name: 'Materials purchased', total: '2800.00' }],
+    },
+    {
+      label: 'Overheads',
+      total: '1470.00',
+      accounts: [],
+      children: [
+        {
+          label: 'Premises costs',
+          total: '1050.00',
+          children: [],
+          accounts: [{ code: '7100', name: 'Rent and rates', total: '1050.00' }],
+        },
+        {
+          label: 'Motor and travel',
+          total: '420.00',
+          children: [],
+          accounts: [{ code: '7400', name: 'Motor expenses', total: '420.00' }],
+        },
+      ],
+    },
+    {
+      label: 'Finance costs',
+      total: '70.00',
+      children: [],
+      accounts: [{ code: '8100', name: 'Bank interest', total: '70.00' }],
+    },
+  ],
+};
+
 const reports = new Map<string, Report>([
-  ['french-balance-sheet/2016', balanceSheetFor('2016')],
-  ['french-balance-sheet/2015', balanceSheetFor('2015')],
-  ['french-profit-and-loss/2016', reportFor('2016', 1)],
-  ['french-profit-and-loss/2015', reportFor('2015', 2)],
+  [`${NORTHWIND.id}/french-balance-sheet/2016`, balanceSheetFor('2016')],
+  [`${NORTHWIND.id}/french-balance-sheet/2015`, balanceSheetFor('2015')],
+  [`${NORTHWIND.id}/french-profit-and-loss/2016`, reportFor('2016', 1)],
+  [`${NORTHWIND.id}/french-profit-and-loss/2015`, reportFor('2015', 2)],
+  [`${RIVERSIDE.id}/uk-profit-and-loss/2016`, riversideProfitAndLoss],
 ]);
 
 /**
@@ -228,9 +302,23 @@ const reports = new Map<string, Report>([
 export const PERIOD_THAT_FAILS = '0000';
 
 export const handlers = [
-  http.get(templateIndexUrl(), () => HttpResponse.json(templates)),
+  http.get(companiesUrl(), () => HttpResponse.json(companies)),
+
+  http.get(TEMPLATE_INDEX_URL_PATTERN, ({ params }) => {
+    const index = templatesByCompany.get(String(params.companyId));
+
+    if (!index) {
+      return HttpResponse.json<ApiError>(
+        { message: `No Company called ${String(params.companyId)}.` },
+        { status: 404 },
+      );
+    }
+
+    return HttpResponse.json(index);
+  }),
 
   http.get(REPORT_URL_PATTERN, ({ params }) => {
+    const companyId = String(params.companyId);
     const templateId = String(params.templateId);
     const period = String(params.period);
 
@@ -241,11 +329,13 @@ export const handlers = [
       );
     }
 
-    const report = reports.get(`${templateId}/${period}`);
+    const report = reports.get(`${companyId}/${templateId}/${period}`);
 
     if (!report) {
       return HttpResponse.json<ApiError>(
-        { message: `No Report for ReportTemplate ${templateId} in Period ${period}.` },
+        {
+          message: `No Report for ReportTemplate ${templateId} in Period ${period} under Company ${companyId}.`,
+        },
         { status: 404 },
       );
     }

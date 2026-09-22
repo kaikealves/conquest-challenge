@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  A small ledger using a UK-style numbering convention: revenue starts with 4,
+  not 7 as in the French sample — the exact contrast the brief gives for why a
+  ReportTemplate is chosen per country ("French revenue accounts start with 7,
+  whereas UK revenue accounts usually start with 4").
+
+  Purpose: this fixture backs the synthetic second Company (ticket 30), proving
+  the importer builds a genuinely different chart's Report, not a relabelled
+  copy of the French one.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>4000</number><name>Sales</name>
+      <debit>0</debit><credit>1200.00</credit><currency>EUR</currency>
+      <date>2016-05-01</date><internalID>{K1}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>5000</number><name>Materials purchased</name>
+      <debit>400.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-02</date><internalID>{K2}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>7100</number><name>Rent and rates</name>
+      <debit>150.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-03</date><internalID>{K3}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>7400</number><name>Motor expenses</name>
+      <debit>60.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-04</date><internalID>{K4}</internalID>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>8100</number><name>Bank interest</name>
+      <debit>10.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-05-05</date><internalID>{K5}</internalID>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

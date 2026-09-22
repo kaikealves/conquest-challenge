@@ -15,12 +15,16 @@
  * the rules a backend must satisfy — that document is for the backend author,
  * this file is for the client.
  *
- *   GET /data/templates.json
- *     200 → ReportTemplateIndex
+ *   GET /data/companies.json
+ *     200 → CompaniesIndex
  *
- *   GET /data/reports/{templateId}/{period}.json
+ *   GET /data/companies/{companyId}/templates.json
+ *     200 → ReportTemplateIndex
+ *     404 → no such Company
+ *
+ *   GET /data/companies/{companyId}/reports/{templateId}/{period}.json
  *     200 → Report
- *     404 → no such ReportTemplate, or no Report for that Period
+ *     404 → no such Company, no such ReportTemplate, or no Report for that Period
  *     500 → the Report could not be produced
  *
  * Every amount is an exact decimal string, never a number. JSON has no exact
@@ -33,10 +37,18 @@
 /**
  * The accounting entity a Report belongs to. Carried through unchanged from
  * wherever the data was imported from; the application never reinterprets it.
- * See ADR-0009.
+ * See ADR-0009 and ADR-0010.
  */
 export type Company = {
+  /** Stable identifier used in the URL. Never the display name. */
+  readonly id: string;
   readonly name: string;
+  /** ISO 3166-1 alpha-2. Decides which ReportTemplates apply to this Company. */
+  readonly country: string;
+};
+
+export type CompaniesIndex = {
+  readonly companies: readonly Company[];
 };
 
 export type Account = {
@@ -99,18 +111,27 @@ export type ApiError = {
  */
 export const API_BASE_URL = '/data';
 
-export function templateIndexUrl(): string {
-  return `${API_BASE_URL}/templates.json`;
+export function companiesUrl(): string {
+  return `${API_BASE_URL}/companies.json`;
 }
 
-export function reportUrl(templateId: string, period: string): string {
+function companyPath(companyId: string): string {
+  return `${API_BASE_URL}/companies/${encodeURIComponent(companyId)}`;
+}
+
+export function templateIndexUrl(companyId: string): string {
+  return `${companyPath(companyId)}/templates.json`;
+}
+
+export function reportUrl(companyId: string, templateId: string, period: string): string {
   // Encoded, so an id or Period can never change which path is requested.
-  return `${API_BASE_URL}/reports/${encodeURIComponent(templateId)}/${encodeURIComponent(period)}.json`;
+  return `${companyPath(companyId)}/reports/${encodeURIComponent(templateId)}/${encodeURIComponent(period)}.json`;
 }
 
 /**
- * The same address with its two segments left open, in the syntax MSW matches
- * on. Kept beside `reportUrl` so the mock cannot describe a different path from
- * the one the client requests.
+ * The same address with its segments left open, in the syntax MSW matches on.
+ * Kept beside `templateIndexUrl`/`reportUrl` so the mock cannot describe a
+ * different path from the one the client requests.
  */
-export const REPORT_URL_PATTERN = `${API_BASE_URL}/reports/:templateId/:period.json`;
+export const TEMPLATE_INDEX_URL_PATTERN = `${API_BASE_URL}/companies/:companyId/templates.json`;
+export const REPORT_URL_PATTERN = `${API_BASE_URL}/companies/:companyId/reports/:templateId/:period.json`;

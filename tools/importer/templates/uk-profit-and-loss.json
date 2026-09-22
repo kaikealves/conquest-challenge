@@ -1,0 +1,35 @@
+{
+  "id": "uk-profit-and-loss",
+  "name": "Profit and loss",
+  "kind": "ProfitAndLoss",
+  "country": "GB",
+  "scope": ["4", "5", "7", "8"],
+  "categories": [
+    {
+      "label": "Turnover",
+      "categoryRoots": ["4"]
+    },
+    {
+      "label": "Cost of sales",
+      "categoryRoots": ["5"]
+    },
+    {
+      "label": "Overheads",
+      "categoryRoots": ["7"],
+      "children": [
+        {
+          "label": "Premises costs",
+          "categoryRoots": ["71"]
+        },
+        {
+          "label": "Motor and travel",
+          "categoryRoots": ["74"]
+        }
+      ]
+    },
+    {
+      "label": "Finance costs",
+      "categoryRoots": ["8"]
+    }
+  ]
+}

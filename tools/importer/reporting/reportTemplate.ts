@@ -57,6 +57,15 @@ export type ReportTemplate = {
   readonly name: string;
   readonly kind: ReportKind;
   /**
+   * ISO 3166-1 alpha-2: which chart-of-accounts convention this template
+   * follows. A Company only gets Reports from templates whose country matches
+   * its own — see `templatesForCountry` and ADR-0010. Without this, a
+   * template built for one country's Account numbering would silently be
+   * applied to another's ledger, matching prefixes that mean something
+   * different there.
+   */
+  readonly country: string;
+  /**
    * The Accounts this template is answerable for, as CategoryRoots: a
    * ProfitAndLoss answers for revenue and expense Accounts and has no business
    * with the balance-sheet ones, so those are not "unmatched", they are out of
@@ -72,3 +81,17 @@ export type ReportTemplate = {
    */
   readonly result?: ResultDefinition;
 };
+
+/**
+ * The templates that apply to a Company: those sharing its country. A
+ * template for a different country's chart is not "unmatched" against this
+ * Company's ledger, it is simply not offered — the same distinction Scope
+ * draws between an Account a template does not cover and one it never claimed
+ * to.
+ */
+export function templatesForCountry(
+  templates: readonly ReportTemplate[],
+  country: string,
+): ReportTemplate[] {
+  return templates.filter((template) => template.country === country);
+}

@@ -20,6 +20,14 @@ export default defineConfig({
     // having, and the workflow uploads it.
     trace: 'retain-on-failure',
   },
+  /**
+   * Above Playwright's 5s default. A cold load resolving Company, then
+   * ReportTemplate, then Period is three sequential fetches before anything
+   * renders — correct (Company must be known before its ReportTemplates can
+   * be asked for), but tight under the CPU contention of the whole suite's
+   * several browsers and dev servers running at once.
+   */
+  expect: { timeout: 10_000 },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   /**
    * End-to-end tests run against the production bundle, not the dev server, so
@@ -38,9 +46,15 @@ export default defineConfig({
       timeout: 120_000,
     },
     {
-      // `real` mode, as `npm run dev:real` runs it, but fed a fixture and kept in
+      // `real` mode, as `npm run dev:real` runs it, but fed fixtures and kept in
       // its own directory so a test run never touches the author's real output.
-      command: `tsx tools/importer/main.ts tools/importer/fixtures/accounts-across-nested-categories.xml ${realLedgerDir}/data && vite --mode real --port ${String(realPort)} --strictPort`,
+      // Two Companies, the same shape `dev:real` imports for real: one whose name
+      // is derived from its filename, one given explicitly.
+      command: [
+        `tsx tools/importer/main.ts tools/importer/fixtures/accounts-across-nested-categories.xml ${realLedgerDir}/data --country=FR`,
+        `tsx tools/importer/main.ts tools/importer/fixtures/uk-style-chart-of-accounts.xml ${realLedgerDir}/data --country=GB --company-id=uk-fixture-co --company-name="UK Fixture Co"`,
+        `vite --mode real --port ${String(realPort)} --strictPort`,
+      ].join(' && '),
       url: `http://localhost:${String(realPort)}`,
       env: { REAL_LEDGER_PUBLIC_DIR: realLedgerDir },
       reuseExistingServer: false,

@@ -37,6 +37,7 @@ async function* inChunks(payload: string, size = 64): AsyncIterable<string> {
 const purchases: ReportTemplate = {
   id: 'purchases',
   name: 'Purchases only',
+  country: 'FR',
   kind: 'ProfitAndLoss',
   categories: [{ label: 'Purchases', categoryRoots: ['606'] }],
 };
@@ -88,6 +89,7 @@ test('amounts stay exact beyond the range a float can count cents in', async () 
 const operatingExpenses: ReportTemplate = {
   id: 'operating-expenses',
   name: 'Operating expenses',
+  country: 'FR',
   kind: 'ProfitAndLoss',
   categories: [
     {
@@ -131,6 +133,7 @@ const bank = { label: 'Bank', categoryRoots: ['512'] };
 const balanceSheet: ReportTemplate = {
   id: 'balance-sheet',
   name: 'Balance sheet',
+  country: 'FR',
   kind: 'BalanceSheet',
   categories: [
     { label: 'Assets', categoryRoots: ['5'], children: [bank] },
@@ -142,6 +145,7 @@ const balanceSheet: ReportTemplate = {
 const profitAndLossOverTheBank: ReportTemplate = {
   id: 'profit-and-loss-over-the-bank',
   name: 'A ProfitAndLoss whose CategoryRoot also matches a balance-sheet Account',
+  country: 'FR',
   kind: 'ProfitAndLoss',
   // A real ProfitAndLoss never names a balance-sheet Account. This one does, so
   // the carried-forward balance has somewhere to wrongly appear.
@@ -198,6 +202,7 @@ test('the Result lists the revenue and expense Accounts it is made of', async ()
 const partiesAndBank: ReportTemplate = {
   id: 'parties-and-bank',
   name: 'Customers, suppliers and the bank',
+  country: 'FR',
   kind: 'BalanceSheet',
   categories: [
     { label: 'Customers', categoryRoots: ['411'] },
@@ -285,6 +290,7 @@ function listedAccounts(categories: readonly Category[]): [string, string][] {
 const revenue = (roots: string[], services: string[]): ReportTemplate => ({
   id: 'revenue',
   name: 'Revenue',
+  country: 'FR',
   kind: 'ProfitAndLoss',
   categories: [
     { label: 'Revenue', categoryRoots: roots },
@@ -366,6 +372,7 @@ test('a CategoryRoot longer than the parent’s claims an Account for a nested C
   const template: ReportTemplate = {
     id: 'nested-and-sibling',
     name: 'Nested and sibling',
+    country: 'FR',
     kind: 'ProfitAndLoss',
     categories: [
       {
@@ -391,6 +398,7 @@ test('a Category with several CategoryRoots is as specific as its longest matchi
   const template: ReportTemplate = {
     id: 'several-roots',
     name: 'Several roots',
+    country: 'FR',
     kind: 'ProfitAndLoss',
     categories: [
       { label: 'Services', categoryRoots: ['706'] },
@@ -409,6 +417,7 @@ test('a child Category may claim an Account its parent’s own roots do not sele
   const template: ReportTemplate = {
     id: 'child-outside-parent',
     name: 'Child outside parent',
+    country: 'FR',
     kind: 'ProfitAndLoss',
     categories: [
       {
@@ -430,6 +439,7 @@ test('an Account a chart Category has claimed is not counted again in the Result
   const [report] = await buildReports(inChunks(accountsOfUnusualLength), {
     id: 'overlapping-result',
     name: 'Overlapping Result',
+    country: 'FR',
     kind: 'BalanceSheet',
     categories: [{ label: 'Services', categoryRoots: ['706'] }],
     result: { label: 'Result', categoryRoots: ['70'] },
@@ -611,10 +621,12 @@ test('nothing disappears from a BalanceSheet with a Result and a scope', async (
 
 test('a Report carries the Company it was built for', async () => {
   const [report] = await buildReports(inChunks(purchasesAcrossTwoFiscalYears), purchases, {
+    id: 'acme-freight',
     name: 'Acme Freight',
+    country: 'FR',
   });
 
-  expect(report?.company).toEqual({ name: 'Acme Freight' });
+  expect(report?.company).toEqual({ id: 'acme-freight', name: 'Acme Freight', country: 'FR' });
 });
 
 test('a caller who does not say which Company still gets one, not nothing', async () => {

@@ -5,18 +5,23 @@ import { expect, test } from '@playwright/test';
  * site, with the API answered at the network edge.
  */
 test('money the ReportTemplate does not cover is shown, not dropped', async ({ page }) => {
-  await page.route('**/data/templates.json', (route) =>
+  await page.route('**/data/companies.json', (route) =>
+    route.fulfill({
+      json: { companies: [{ id: 'alpha-co', name: 'Alpha Co', country: 'FR' }] },
+    }),
+  );
+  await page.route('**/data/companies/alpha-co/templates.json', (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Unmatched Co' },
+        company: { id: 'alpha-co', name: 'Alpha Co', country: 'FR' },
         templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }],
       },
     }),
   );
-  await page.route('**/data/reports/alpha/2016.json', (route) =>
+  await page.route('**/data/companies/alpha-co/reports/alpha/2016.json', (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Unmatched Co' },
+        company: { id: 'alpha-co', name: 'Alpha Co', country: 'FR' },
         templateId: 'alpha',
         templateName: 'Alpha',
         period: '2016',

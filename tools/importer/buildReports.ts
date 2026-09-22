@@ -9,7 +9,11 @@ import {
 import type { ReportTemplate } from './reporting/reportTemplate.ts';
 
 /** Used when a caller does not say which Company a Report is for — most tests. */
-const UNSPECIFIED_COMPANY: Company = { name: 'Unspecified Company' };
+const UNSPECIFIED_COMPANY: Company = {
+  id: 'unspecified-company',
+  name: 'Unspecified Company',
+  country: 'ZZ',
+};
 
 /**
  * Seam 1: a Provider payload in, one Report per Period out.

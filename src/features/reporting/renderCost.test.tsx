@@ -46,7 +46,7 @@ const category = (label: string, children: Category[] = [], accountCount = 0): C
 });
 
 const report: Report = {
-  company: { name: 'Test Co' },
+  company: { id: 'test-co', name: 'Test Co', country: 'FR' },
   templateId: 't',
   templateName: 'T',
   period: '2016',

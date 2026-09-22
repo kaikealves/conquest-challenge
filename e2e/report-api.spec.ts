@@ -7,7 +7,9 @@ import { expect, test } from '@playwright/test';
  */
 
 test('a Report that does not exist answers 404, not the application shell', async ({ request }) => {
-  const response = await request.get('/data/reports/no-such-template/2016.json');
+  const response = await request.get(
+    '/data/companies/no-such-company/reports/no-such-template/2016.json',
+  );
 
   expect(response.status()).toBe(404);
   // A single-page server answers unmatched paths with index.html. If that
@@ -18,7 +20,9 @@ test('a Report that does not exist answers 404, not the application shell', asyn
 });
 
 test('an application route still falls back to the shell', async ({ request }) => {
-  const response = await request.get('/reports/french-profit-and-loss/2016');
+  const response = await request.get(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
 
   expect(response.status()).toBe(200);
   expect(response.headers()['content-type'] ?? '').toContain('text/html');

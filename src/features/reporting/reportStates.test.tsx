@@ -19,12 +19,14 @@ import { renderApp } from '../../shared/testing/renderApp.tsx';
  * puts it in the URL, and the deduplication rule needs two views of one Report.
  * Both say so where they are.
  */
+const COMPANY_ID = 'northwind-freight';
+
 function renderScreen(templateId: string, period: string) {
   const queryClient = createQueryClient();
 
   const result = render(
     <QueryClientProvider client={queryClient}>
-      <ReportScreen templateId={templateId} period={period} />
+      <ReportScreen companyId={COMPANY_ID} templateId={templateId} period={period} />
     </QueryClientProvider>,
   );
 
@@ -33,7 +35,7 @@ function renderScreen(templateId: string, period: string) {
     changePeriodTo: (nextPeriod: string) =>
       result.rerender(
         <QueryClientProvider client={queryClient}>
-          <ReportScreen templateId={templateId} period={nextPeriod} />
+          <ReportScreen companyId={COMPANY_ID} templateId={templateId} period={nextPeriod} />
         </QueryClientProvider>,
       ),
   };
@@ -44,7 +46,7 @@ function respondWith(status: number, body: Record<string, unknown>) {
 }
 
 const aReportWith = (categories: unknown[]) => ({
-  company: { name: 'Test Co' },
+  company: { id: COMPANY_ID, name: 'Test Co', country: 'FR' },
   templateId: 'french-profit-and-loss',
   templateName: 'Profit and loss',
   period: '2016',
@@ -153,15 +155,15 @@ test('two views of the same Report make one request, not two', async () => {
   // because ticket 12 lists it, not as a pattern to copy.
   const requested: string[] = [];
   server.events.on('request:start', ({ request }) => {
-    if (request.url.includes('/data/reports/')) requested.push(request.url);
+    if (/\/data\/companies\/[^/]+\/reports\//.test(request.url)) requested.push(request.url);
   });
 
   const queryClient = createQueryClient();
 
   render(
     <QueryClientProvider client={queryClient}>
-      <ReportScreen templateId="french-profit-and-loss" period="2016" />
-      <ReportScreen templateId="french-profit-and-loss" period="2016" />
+      <ReportScreen companyId={COMPANY_ID} templateId="french-profit-and-loss" period="2016" />
+      <ReportScreen companyId={COMPANY_ID} templateId="french-profit-and-loss" period="2016" />
     </QueryClientProvider>,
   );
 

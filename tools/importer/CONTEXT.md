@@ -66,6 +66,8 @@ _Avoid_: amount, value, sum, balance
 The accounting entity whose ledger is being imported. Supplied when the
 importer runs and carried through unchanged into Reporting — unlike an
 AuxiliaryAccount or a FiscalYear, it is not reinterpreted at that boundary, so
-it has one definition rather than two. See
-[ADR-0009](../../docs/adr/0009-company-is-a-shared-passthrough.md).
+it has one definition rather than two. Its `country` decides which
+ReportTemplates the importer builds a Report from for it. See
+[ADR-0009](../../docs/adr/0009-company-is-a-shared-passthrough.md) and
+[ADR-0010](../../docs/adr/0010-company-switcher.md).
 _Avoid_: client, tenant, organization, customer

@@ -1,11 +1,15 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * The Period lives in the address bar beside the ReportTemplate. Checked in a
- * real browser against the built site, with the API answered at the network edge.
+ * The Period lives in the address bar beside the Company and ReportTemplate.
+ * Checked in a real browser against the built site, with the API answered at
+ * the network edge.
  */
+const COMPANY = { id: 'period-co', name: 'Period Co', country: 'FR' };
+const BASE = `/companies/${COMPANY.id}/reports/alpha`;
+
 const reportFor = (period: string, total: string) => ({
-  company: { name: 'Period Co' },
+  company: COMPANY,
   templateId: 'alpha',
   templateName: 'Alpha',
   period,
@@ -15,18 +19,21 @@ const reportFor = (period: string, total: string) => ({
 });
 
 test.beforeEach(async ({ page }) => {
-  await page.route('**/data/templates.json', (route) =>
+  await page.route('**/data/companies.json', (route) =>
+    route.fulfill({ json: { companies: [COMPANY] } }),
+  );
+  await page.route(`**/data/companies/${COMPANY.id}/templates.json`, (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Period Co' },
+        company: COMPANY,
         templates: [{ id: 'alpha', name: 'Alpha', periods: ['2015', '2016'] }],
       },
     }),
   );
-  await page.route('**/data/reports/alpha/2015.json', (route) =>
+  await page.route(`**/data/companies/${COMPANY.id}/reports/alpha/2015.json`, (route) =>
     route.fulfill({ json: reportFor('2015', '100.00') }),
   );
-  await page.route('**/data/reports/alpha/2016.json', (route) =>
+  await page.route(`**/data/companies/${COMPANY.id}/reports/alpha/2016.json`, (route) =>
     route.fulfill({ json: reportFor('2016', '250.00') }),
   );
 });
@@ -35,17 +42,17 @@ test('changing the Period changes the totals and the address', async ({ page }) 
   await page.goto('/');
 
   // A bare address is completed to the latest Period.
-  await expect(page).toHaveURL(/\/reports\/alpha\/2016$/);
+  await expect(page).toHaveURL(new RegExp(`${BASE}/2016$`));
   await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€250.00');
 
   await page.getByRole('combobox', { name: 'Period' }).selectOption('2015');
 
-  await expect(page).toHaveURL(/\/reports\/alpha\/2015$/);
+  await expect(page).toHaveURL(new RegExp(`${BASE}/2015$`));
   await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€100.00');
 });
 
 test('a copied address opens the Period its sender was looking at', async ({ page }) => {
-  await page.goto('/reports/alpha/2015');
+  await page.goto(`${BASE}/2015`);
 
   await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€100.00');
   await expect(page.getByRole('combobox', { name: 'Period' })).toHaveValue('2015');
@@ -54,8 +61,8 @@ test('a copied address opens the Period its sender was looking at', async ({ pag
 test('a Period with no Report is explained, and offers the Periods that exist', async ({
   page,
 }) => {
-  await page.goto('/reports/alpha/2016');
-  await page.goto('/reports/alpha/1999');
+  await page.goto(`${BASE}/2016`);
+  await page.goto(`${BASE}/1999`);
 
   await expect(page.getByRole('alert')).toContainText('1999');
 
@@ -65,8 +72,8 @@ test('a Period with no Report is explained, and offers the Periods that exist', 
 
 test('an address completed by redirect does not trap the Back button', async ({ page }) => {
   await page.goto('about:blank');
-  await page.goto('/reports/alpha');
-  await expect(page).toHaveURL(/\/reports\/alpha\/2016$/);
+  await page.goto(BASE);
+  await expect(page).toHaveURL(new RegExp(`${BASE}/2016$`));
 
   await page.goBack();
 
@@ -75,7 +82,7 @@ test('an address completed by redirect does not trap the Back button', async ({ 
 });
 
 test('Back returns to the Period before', async ({ page }) => {
-  await page.goto('/reports/alpha/2016');
+  await page.goto(`${BASE}/2016`);
   await page.getByRole('combobox', { name: 'Period' }).selectOption('2015');
   await expect(page.getByRole('row', { name: /Expenses/ })).toContainText('€100.00');
 

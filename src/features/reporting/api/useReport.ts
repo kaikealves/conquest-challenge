@@ -8,11 +8,15 @@ import { reportUrl, type ApiError, type Report } from './contract.ts';
  * no `useEffect` fetching anywhere in this application, so caching, dedup of
  * concurrent requests and the loading and error states come from one place.
  */
-export function useReport(templateId: string, period: string): UseQueryResult<Report> {
+export function useReport(
+  companyId: string,
+  templateId: string,
+  period: string,
+): UseQueryResult<Report> {
   return useQuery({
-    queryKey: ['report', templateId, period],
+    queryKey: ['report', companyId, templateId, period],
     queryFn: async ({ signal }) => {
-      const response = await fetch(reportUrl(templateId, period), { signal });
+      const response = await fetch(reportUrl(companyId, templateId, period), { signal });
 
       if (!response.ok) {
         // The status travels with the error so the retry policy can tell a
@@ -21,7 +25,7 @@ export function useReport(templateId: string, period: string): UseQueryResult<Re
 
         throw httpError(
           body?.message ??
-            `Could not load the Report for ${templateId} in ${period} (${String(response.status)}).`,
+            `Could not load the Report for ${companyId}/${templateId} in ${period} (${String(response.status)}).`,
           response.status,
         );
       }

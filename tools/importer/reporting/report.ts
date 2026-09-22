@@ -17,10 +17,14 @@ import type {
 /**
  * The accounting entity a Report belongs to. Supplied when the importer runs
  * and carried through unchanged — Reporting does not reinterpret it the way it
- * reinterprets an AuxiliaryAccount or a FiscalYear. See ADR-0009.
+ * reinterprets an AuxiliaryAccount or a FiscalYear. See ADR-0009 and ADR-0010.
  */
 export type Company = {
+  /** A stable slug, used in the URL. Separate from `name` for the same reason a ReportTemplate's is. */
+  readonly id: string;
   readonly name: string;
+  /** ISO 3166-1 alpha-2. Decides which ReportTemplates apply to this Company. */
+  readonly country: string;
 };
 
 export type Account = {
