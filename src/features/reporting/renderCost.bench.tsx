@@ -41,6 +41,7 @@ function largeReport(breadth: number, depth: number, accounts: number): Report {
     period: '2016',
     currency: 'EUR',
     unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+    missingOpeningBalances: false,
     categories: Array.from({ length: breadth }, (_, i) => make(depth, String(i))),
   };
 }

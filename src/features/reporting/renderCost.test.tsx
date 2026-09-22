@@ -52,6 +52,7 @@ const report: Report = {
   period: '2016',
   currency: 'EUR',
   unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  missingOpeningBalances: false,
   categories: [
     category('Alpha', [category('Alpha one', [], 3), category('Alpha two', [], 3)]),
     category('Beta', [category('Beta one', [], 3)]),

@@ -68,6 +68,7 @@ test('what the importer writes satisfies the type the application reads', async 
       'categories',
       'company',
       'currency',
+      'missingOpeningBalances',
       'period',
       'templateId',
       'templateName',

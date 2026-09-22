@@ -4,6 +4,7 @@ import accountsAcrossNestedCategories from './fixtures/accounts-across-nested-ca
 import accountsOfUnusualLength from './fixtures/accounts-of-unusual-length.xml?raw';
 import amountsBeyondFloatPrecision from './fixtures/amounts-beyond-float-precision.xml?raw';
 import amountsThatBreakFloatingPoint from './fixtures/amounts-that-break-floating-point.xml?raw';
+import aYearThatCarriesNothingForward from './fixtures/a-year-that-carries-nothing-forward.xml?raw';
 import anEntryCarryingBothColumns from './fixtures/an-entry-carrying-both-columns.xml?raw';
 import aControlAccountAlsoPostedToDirectly from './fixtures/a-control-account-also-posted-to-directly.xml?raw';
 import customerAndSupplierAuxiliaryAccounts from './fixtures/customer-and-supplier-auxiliary-accounts.xml?raw';
@@ -180,6 +181,31 @@ test('the BalanceSheet balances once the Result is counted', async () => {
   // Assets are debits (positive), Equity and the Result credits (negative), so
   // a BalanceSheet that balances nets to zero.
   expect(report?.categories.reduce((sum, category) => sum + Number(category.total), 0)).toBe(0);
+});
+
+async function missingOpeningBalancesByPeriod(template: ReportTemplate) {
+  const reports = await buildReports(inChunks(aYearThatCarriesNothingForward), template);
+
+  return Object.fromEntries(
+    reports.map((report) => [report.period, report.missingOpeningBalances]),
+  );
+}
+
+test('a BalanceSheet for a year that carried nothing forward says so', async () => {
+  expect(await missingOpeningBalancesByPeriod(balanceSheet)).toEqual({
+    // The first year in the ledger has nothing before it to carry forward.
+    '2015': false,
+    '2016': false,
+    '2017': true,
+  });
+});
+
+test('a ProfitAndLoss never needs opening balances, so is never flagged for lacking them', async () => {
+  expect(await missingOpeningBalancesByPeriod(profitAndLossOverTheBank)).toEqual({
+    '2015': false,
+    '2016': false,
+    '2017': false,
+  });
 });
 
 test('a journal code that only resembles the carried-forward one is not left out', async () => {

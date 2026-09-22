@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Three balanced FiscalYears on a bank Account and a capital Account:
+
+  - 2015, the first year in the ledger: capital of 1000.00 paid into the bank.
+    No journal AN, and none is expected — nothing came before it.
+  - 2016: the 1000.00 carried forward (journal AN), then a sale of 250.00.
+  - 2017: a sale of 100.00, and no journal AN — as in a ledger exported before
+    the previous year was closed.
+
+  Purpose: only 2017's BalanceSheet is missing its opening balances. Its bank
+  total is 100.00, when the bank really holds 1350.00.
+-->
+<WCFRestIRFGeneralLegerResult>
+  <data>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>1000.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2015-02-01</date><internalID>{N1}</internalID><ref>BQ01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>101000</number><name>Capital</name>
+      <debit>0</debit><credit>1000.00</credit><currency>EUR</currency>
+      <date>2015-02-01</date><internalID>{N2}</internalID><ref>BQ01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>1000.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-01-01</date><internalID>{N3}</internalID><ref>AN</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>101000</number><name>Capital</name>
+      <debit>0</debit><credit>1000.00</credit><currency>EUR</currency>
+      <date>2016-01-01</date><internalID>{N4}</internalID><ref>AN</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>250.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2016-03-10</date><internalID>{N5}</internalID><ref>BQ01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>706000</number><name>Prestations de services</name>
+      <debit>0</debit><credit>250.00</credit><currency>EUR</currency>
+      <date>2016-03-10</date><internalID>{N6}</internalID><ref>VTE01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>512000</number><name>Banque</name>
+      <debit>100.00</debit><credit>0</credit><currency>EUR</currency>
+      <date>2017-04-12</date><internalID>{N7}</internalID><ref>BQ01</ref>
+    </wsGeneralLedger>
+    <wsGeneralLedger>
+      <number>706000</number><name>Prestations de services</name>
+      <debit>0</debit><credit>100.00</credit><currency>EUR</currency>
+      <date>2017-04-12</date><internalID>{N8}</internalID><ref>VTE01</ref>
+    </wsGeneralLedger>
+  </data>
+</WCFRestIRFGeneralLegerResult>

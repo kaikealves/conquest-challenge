@@ -40,7 +40,8 @@ export function ReportTable({ report }: ReportTableProps) {
         <ExportButton key={`${report.templateId}/${report.period}`} report={report} />
       </div>
 
-      <div className="px-5 pt-4">
+      <div className="flex flex-col gap-3 px-5 pt-4 empty:hidden">
+        <OpeningBalancesNotice report={report} />
         <UnmatchedNotice report={report} />
       </div>
 
@@ -82,6 +83,24 @@ export function ReportTable({ report }: ReportTableProps) {
         </table>
       </div>
     </section>
+  );
+}
+
+/**
+ * Warns that a BalanceSheet's figures are one year's movements, not balances,
+ * because nothing was carried forward into its Period.
+ */
+function OpeningBalancesNotice({ report }: { readonly report: Report }) {
+  if (!report.missingOpeningBalances) {
+    return null;
+  }
+
+  return (
+    <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+      No balances were carried forward into {report.period}, so these figures show only what was
+      posted during {report.period}, not the position at the end of it. The ledger may have been
+      exported before the previous year was closed.
+    </p>
   );
 }
 
