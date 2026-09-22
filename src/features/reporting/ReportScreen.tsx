@@ -73,11 +73,11 @@ function isEmpty(report: Report): boolean {
 }
 
 function describeState({ isPending, isError, report }: StateProps): string {
-  if (isPending) return 'Loading the Report.';
-  if (isError) return 'The Report could not be loaded.';
-  if (report && isEmpty(report)) return 'This Report has no Categories.';
+  if (isPending) return 'Loading the report.';
+  if (isError) return 'The report could not be loaded.';
+  if (report && isEmpty(report)) return 'This report has no figures.';
 
-  return 'The Report is ready.';
+  return 'The report is ready.';
 }
 
 type ReportStateProps = StateProps & {
@@ -89,7 +89,7 @@ function ReportState({ isPending, isError, error, report, onRetry }: ReportState
   if (isPending) {
     // The announcement is made by the live region above, so this carries no
     // role of its own — two regions would announce the same transition twice.
-    return <p className="text-slate-600">Loading the Report…</p>;
+    return <p className="text-slate-600">Loading the report…</p>;
   }
 
   if (isError) {
@@ -100,8 +100,8 @@ function ReportState({ isPending, isError, error, report, onRetry }: ReportState
     return (
       <div className="flex flex-col items-start gap-3">
         <p className="text-red-700">
-          The Report could not be loaded. The connection may have dropped, or the Report may not
-          exist for this Period.
+          The report could not be loaded. The connection may have dropped, or there may be no report
+          for this period.
         </p>
         {/* Outside any live region: an alert that contains a button announces
             the button as flat text and re-announces everything when its label
@@ -121,9 +121,7 @@ function ReportState({ isPending, isError, error, report, onRetry }: ReportState
     // Only what is known. An empty Report can mean a Period with no postings or
     // a ReportTemplate whose CategoryRoots match nothing — the payload does not
     // say which, so neither does this.
-    return (
-      <p className="text-slate-600">This Report has no Categories for Period {report.period}.</p>
-    );
+    return <p className="text-slate-600">This report has no figures for {report.period}.</p>;
   }
 
   return report ? <ReportTable report={report} /> : null;

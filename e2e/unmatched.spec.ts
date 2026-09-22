@@ -38,7 +38,7 @@ test('money the ReportTemplate does not cover is shown, not dropped', async ({ p
   );
   await page.goto('/');
 
-  await expect(page.getByText(/1 Account matched none/)).toBeVisible();
+  await expect(page.getByText(/1 account matches none/)).toBeVisible();
 
   await page.getByRole('button', { name: 'Unmatched' }).click();
   await expect(page.getByRole('row', { name: /411100/ })).toContainText('€500.50');

@@ -11,5 +11,5 @@ import { renderApp } from './shared/testing/renderApp.tsx';
 test('the application shell names what it presents', () => {
   renderApp();
 
-  expect(screen.getByRole('heading', { name: 'Accounting Reports', level: 1 })).toBeVisible();
+  expect(screen.getByRole('heading', { name: 'Financial Statements', level: 1 })).toBeVisible();
 });

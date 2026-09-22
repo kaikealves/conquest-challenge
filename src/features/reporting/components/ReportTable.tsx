@@ -95,10 +95,10 @@ function UnmatchedNotice({ report }: { readonly report: Report }) {
 
   return (
     <p className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
-      {count === 1 ? '1 Account matched' : `${String(count)} Accounts matched`} none of this
-      ReportTemplate’s Categories, totalling{' '}
-      {formatAmount(report.unmatched.total, report.currency, DISPLAY_LOCALE)}. The ReportTemplate
-      may be incomplete.
+      {count === 1 ? '1 account matches' : `${String(count)} accounts match`} none of this
+      template’s categories, totalling{' '}
+      {formatAmount(report.unmatched.total, report.currency, DISPLAY_LOCALE)}. The template may be
+      incomplete.
     </p>
   );
 }

@@ -65,10 +65,10 @@ test('a Report in flight says so, and stops saying so once it arrives', async ()
   // to observe on the first render.
   renderScreen('french-profit-and-loss', '2016');
 
-  expect(screen.getByText('Loading the Report…')).toBeVisible();
+  expect(screen.getByText('Loading the report…')).toBeVisible();
 
   expect(await screen.findByRole('table')).toBeVisible();
-  expect(screen.queryByText('Loading the Report…')).not.toBeInTheDocument();
+  expect(screen.queryByText('Loading the report…')).not.toBeInTheDocument();
 });
 
 test('each state is announced to a reader who cannot see the screen', async () => {
@@ -133,7 +133,7 @@ test('changing the Period never shows the previous Period’s Report', async () 
   // Report arrived and so would pass even if the old figures were on screen
   // the whole time in between — which is exactly the bug this guards against.
   expect(screen.queryByText('€2,350.50')).not.toBeInTheDocument();
-  expect(screen.getByText('Loading the Report…')).toBeVisible();
+  expect(screen.getByText('Loading the report…')).toBeVisible();
 
   expect(await screen.findByText('€4,701.00')).toBeVisible();
 });
@@ -142,11 +142,11 @@ test('a Report with no Categories says so, and is not mistaken for a failure', a
   respondWith(200, aReportWith([]));
   renderApp();
 
-  expect(await screen.findByText(/has no Categories for Period/i)).toBeVisible();
+  expect(await screen.findByText(/has no figures for/i)).toBeVisible();
   // The discriminator a user acts on: nothing failed, so there is nothing to
   // retry.
   expect(screen.queryByRole('button', { name: /try again/i })).not.toBeInTheDocument();
-  expect(screen.getByRole('status')).toHaveTextContent(/no categories/i);
+  expect(screen.getByRole('status')).toHaveTextContent(/no figures/i);
 });
 
 test('two views of the same Report make one request, not two', async () => {
@@ -185,8 +185,8 @@ test('a Report with no Categories but money in the unmatched group is still show
   renderApp();
 
   // Nothing to show would hide exactly the money the group exists to surface.
-  expect(await screen.findByText(/1 Account matched none/)).toBeVisible();
-  expect(screen.queryByText(/This Report has no Categories/)).not.toBeInTheDocument();
+  expect(await screen.findByText(/1 account matches none/)).toBeVisible();
+  expect(screen.queryByText(/This report has no figures/)).not.toBeInTheDocument();
 });
 
 test('a payload without the unmatched group is a failed load, not a blank page', async () => {

@@ -20,7 +20,7 @@ test('a Report with nothing unmatched still shows the group, empty', async () =>
 test('a Report with unmatched Accounts says so, with how much', async () => {
   renderApp('/companies/northwind-freight/reports/french-profit-and-loss/2015');
 
-  expect(await screen.findByText(/1 Account matched none of this/)).toHaveTextContent('€80.00');
+  expect(await screen.findByText(/1 account matches none of this/)).toHaveTextContent('€80.00');
   expect(screen.getByText(/may be incomplete/)).toBeInTheDocument();
 });
 
