@@ -55,7 +55,7 @@ test('a link naming no Period shows the latest', async () => {
 test('a Period the ReportTemplate has no Report for is explained, not shown as a failure', async () => {
   renderApp(`${BASE}/1999`);
 
-  expect(await screen.findByText(/no Report for Period/)).toHaveTextContent('1999');
+  expect(await screen.findByText(/There is no .* for/)).toHaveTextContent('1999');
   expect(screen.queryByText(/could not be loaded/)).not.toBeInTheDocument();
   expect(screen.getByRole('link', { name: '2016' })).toHaveAttribute('href', `${BASE}/2016`);
 });

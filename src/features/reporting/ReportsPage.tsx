@@ -42,13 +42,13 @@ export function ReportsPage() {
   const companiesQuery = useCompanies();
 
   if (companiesQuery.isPending) {
-    return <p role="status">Loading the Companies…</p>;
+    return <p role="status">Loading companies…</p>;
   }
 
   if (companiesQuery.isError) {
     return (
       <div className="flex flex-col items-start gap-3">
-        <p>The list of Companies could not be loaded.</p>
+        <p>The list of companies could not be loaded.</p>
         <button
           type="button"
           onClick={() => void companiesQuery.refetch()}
@@ -64,7 +64,7 @@ export function ReportsPage() {
   const [firstCompany] = companies;
 
   if (!firstCompany) {
-    return <p>There are no Companies to choose from.</p>;
+    return <p>There are no companies to choose from.</p>;
   }
 
   if (companyId === undefined) {
@@ -77,7 +77,7 @@ export function ReportsPage() {
     return (
       <div className="flex flex-col gap-3">
         <p role="alert">
-          There is no Company called <strong>{companyId}</strong>. The link may be out of date.
+          There is no company called <strong>{companyId}</strong>. The link may be out of date.
           Choose one that exists:
         </p>
         <ul className="list-disc pl-6">
@@ -136,7 +136,7 @@ function ReportTemplateResolver({
     return (
       <>
         <CompanyChooser companies={companies} selectedId={company.id} onChoose={onChooseCompany} />
-        <p role="status">Loading the ReportTemplates…</p>
+        <p role="status">Loading report templates…</p>
       </>
     );
   }
@@ -145,7 +145,7 @@ function ReportTemplateResolver({
     return (
       <div className="flex flex-col items-start gap-3">
         <CompanyChooser companies={companies} selectedId={company.id} onChoose={onChooseCompany} />
-        <p>The list of ReportTemplates could not be loaded.</p>
+        <p>The list of report templates could not be loaded.</p>
         <button
           type="button"
           onClick={() => void refetch()}
@@ -163,7 +163,7 @@ function ReportTemplateResolver({
     return (
       <>
         <CompanyChooser companies={companies} selectedId={company.id} onChoose={onChooseCompany} />
-        <p>This Company has no ReportTemplates to choose from.</p>
+        <p>This company has no report templates to choose from.</p>
       </>
     );
   }
@@ -179,7 +179,7 @@ function ReportTemplateResolver({
       <div className="flex flex-col gap-3">
         <CompanyChooser companies={companies} selectedId={company.id} onChoose={onChooseCompany} />
         <p role="alert">
-          There is no ReportTemplate called <strong>{templateId}</strong>. The link may be out of
+          There is no report template called <strong>{templateId}</strong>. The link may be out of
           date. Choose one that exists:
         </p>
         <ul className="list-disc pl-6">
@@ -204,7 +204,7 @@ function ReportTemplateResolver({
     return (
       <>
         <CompanyChooser companies={companies} selectedId={company.id} onChoose={onChooseCompany} />
-        <p>This ReportTemplate has no Reports yet.</p>
+        <p>This report template has no reports yet.</p>
       </>
     );
   }
@@ -243,8 +243,8 @@ function ReportTemplateResolver({
         </div>
         <div className="flex flex-col gap-3">
           <p role="alert">
-            There is no Report for Period <strong>{period}</strong> under {template.name}. The link
-            may be out of date. Choose one that exists:
+            There is no {template.name.toLowerCase()} for <strong>{period}</strong>. The link may be
+            out of date. Choose one that exists:
           </p>
           <ul className="list-disc pl-6">
             {template.periods.map((candidate) => (

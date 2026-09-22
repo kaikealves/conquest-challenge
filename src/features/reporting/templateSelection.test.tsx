@@ -126,14 +126,14 @@ test('no ReportTemplates at all is said plainly', async () => {
   server.use(indexOf([]));
   renderApp();
 
-  expect(await screen.findByText(/no ReportTemplates to choose from/)).toBeInTheDocument();
+  expect(await screen.findByText(/no report templates to choose from/)).toBeInTheDocument();
 });
 
 test('a ReportTemplate with no Periods says it has no Reports', async () => {
   server.use(indexOf([{ id: 'empty', name: 'Empty', periods: [] }]));
   renderApp();
 
-  expect(await screen.findByText(/no Reports yet/)).toBeInTheDocument();
+  expect(await screen.findByText(/no reports yet/)).toBeInTheDocument();
 });
 
 test('the latest Period is the one shown when the link names none', async () => {

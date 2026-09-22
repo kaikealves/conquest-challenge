@@ -72,7 +72,7 @@ test('the Company is shown even when the link names no ReportTemplate that exist
   renderApp('/companies/northwind-freight/reports/no-such-template');
 
   expect(await chooser()).toHaveDisplayValue('Northwind Freight Cooperative');
-  expect(await screen.findByText(/no ReportTemplate called/)).toBeInTheDocument();
+  expect(await screen.findByText(/no report template called/)).toBeInTheDocument();
 });
 
 test('a list of Companies that fails to load can be asked for again', async () => {
@@ -100,7 +100,7 @@ test('no Companies at all is said plainly', async () => {
   server.use(http.get(companiesUrl(), () => HttpResponse.json({ companies: [] })));
   renderApp();
 
-  expect(await screen.findByText(/no Companies to choose from/)).toBeInTheDocument();
+  expect(await screen.findByText(/no companies to choose from/)).toBeInTheDocument();
 });
 
 test('a Company index without its companies is a failed load', async () => {

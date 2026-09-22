@@ -8,10 +8,11 @@ export function App() {
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto flex max-w-4xl flex-col gap-1 px-6 py-6">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Accounting Reports
+            Financial Statements
           </h1>
           <p className="text-sm text-slate-500">
-            A BalanceSheet and a ProfitAndLoss, aggregated into Categories by a ReportTemplate.
+            Balance sheets and profit and loss accounts, summarised from each company’s general
+            ledger.
           </p>
         </div>
       </header>

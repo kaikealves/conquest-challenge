@@ -45,7 +45,7 @@ test('the development mock API is not deployed', async ({ request, page }) => {
   });
 
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: 'Accounting Reports' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Financial Statements' })).toBeVisible();
 
   const sources = await Promise.all(
     scripts.map(async (url) => (await page.request.get(url)).text()),
