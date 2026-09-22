@@ -11,18 +11,23 @@ import ExcelJS from 'exceljs';
  * this is also the proof that the split chunk is served and runs.
  */
 test('the Report on screen downloads as a spreadsheet with real numbers', async ({ page }) => {
-  await page.route('**/data/templates.json', (route) =>
+  const company = { id: 'export-demo-co', name: 'Export Demo Co', country: 'FR' };
+
+  await page.route('**/data/companies.json', (route) =>
+    route.fulfill({ json: { companies: [company] } }),
+  );
+  await page.route('**/data/companies/export-demo-co/templates.json', (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Export Demo Co' },
+        company,
         templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }],
       },
     }),
   );
-  await page.route('**/data/reports/alpha/2016.json', (route) =>
+  await page.route('**/data/companies/export-demo-co/reports/alpha/2016.json', (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Export Demo Co' },
+        company,
         templateId: 'alpha',
         templateName: 'Alpha',
         period: '2016',

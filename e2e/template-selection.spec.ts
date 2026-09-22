@@ -5,10 +5,13 @@ import { expect, test, type Page } from '@playwright/test';
  * bar worth trusting, so this is checked in a real browser against the built
  * site, with the API answered at the network edge.
  */
+const COMPANY = { id: 'two-templates-co', name: 'Two Templates Co', country: 'FR' };
+const BASE = `/companies/${COMPANY.id}/reports`;
+
 const summary = (id: string, name: string) => ({ id, name, periods: ['2016'] });
 
 const reportNamed = (id: string, name: string, label: string) => ({
-  company: { name: 'Two Templates Co' },
+  company: COMPANY,
   templateId: id,
   templateName: name,
   period: '2016',
@@ -18,18 +21,21 @@ const reportNamed = (id: string, name: string, label: string) => ({
 });
 
 async function serveTwoTemplates(page: Page) {
-  await page.route('**/data/templates.json', (route) =>
+  await page.route('**/data/companies.json', (route) =>
+    route.fulfill({ json: { companies: [COMPANY] } }),
+  );
+  await page.route(`**/data/companies/${COMPANY.id}/templates.json`, (route) =>
     route.fulfill({
       json: {
-        company: { name: 'Two Templates Co' },
+        company: COMPANY,
         templates: [summary('alpha', 'Alpha'), summary('beta', 'Beta')],
       },
     }),
   );
-  await page.route('**/data/reports/alpha/2016.json', (route) =>
+  await page.route(`**/data/companies/${COMPANY.id}/reports/alpha/2016.json`, (route) =>
     route.fulfill({ json: reportNamed('alpha', 'Alpha', 'Only in alpha') }),
   );
-  await page.route('**/data/reports/beta/2016.json', (route) =>
+  await page.route(`**/data/companies/${COMPANY.id}/reports/beta/2016.json`, (route) =>
     route.fulfill({ json: reportNamed('beta', 'Beta', 'Only in beta') }),
   );
 }
@@ -38,17 +44,17 @@ test('choosing a ReportTemplate puts it in the address', async ({ page }) => {
   await serveTwoTemplates(page);
   await page.goto('/');
 
-  await expect(page).toHaveURL(/\/reports\/alpha\/2016$/);
+  await expect(page).toHaveURL(new RegExp(`${BASE}/alpha/2016$`));
 
   await page.getByRole('combobox', { name: 'Report template' }).selectOption('Beta');
 
-  await expect(page).toHaveURL(/\/reports\/beta\/2016$/);
+  await expect(page).toHaveURL(new RegExp(`${BASE}/beta/2016$`));
   await expect(page.getByRole('row', { name: /Only in beta/ })).toBeVisible();
 });
 
 test('a copied address opens the same Report in a fresh page', async ({ page, context }) => {
   await serveTwoTemplates(page);
-  await page.goto('/reports/beta');
+  await page.goto(`${BASE}/beta`);
 
   const colleague = await context.newPage();
   await serveTwoTemplates(colleague);
@@ -60,7 +66,7 @@ test('a copied address opens the same Report in a fresh page', async ({ page, co
 
 test('the browser Back button returns to the previous ReportTemplate', async ({ page }) => {
   await serveTwoTemplates(page);
-  await page.goto('/reports/alpha');
+  await page.goto(`${BASE}/alpha`);
   await page.getByRole('combobox', { name: 'Report template' }).selectOption('Beta');
   await expect(page.getByRole('row', { name: /Only in beta/ })).toBeVisible();
 

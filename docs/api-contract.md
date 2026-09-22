@@ -3,7 +3,7 @@
 What the application fetches. Per
 [ADR-0007](./adr/0007-static-json-is-the-api-not-msw.md) these are static JSON
 files the importer writes, served over HTTP; MSW serves the same shapes in tests
-and development. A real backend satisfying these three responses is a base-URL
+and development. A real backend satisfying these responses is a base-URL
 change, not a rewrite.
 
 The TypeScript the client codes against is
@@ -12,10 +12,11 @@ version, because a backend written in Kotlin cannot import a TypeScript type.
 
 ## Endpoints
 
-| Method and path                                | 200                   | Other                                         |
-| ---------------------------------------------- | --------------------- | --------------------------------------------- |
-| `GET /data/templates.json`                     | `ReportTemplateIndex` | —                                             |
-| `GET /data/reports/{templateId}/{period}.json` | `Report`              | `404` unknown template or Period, `500` error |
+| Method and path                                                      | 200                   | Other                                                           |
+| -------------------------------------------------------------------- | --------------------- | --------------------------------------------------------------- |
+| `GET /data/companies.json`                                           | `CompaniesIndex`      | —                                                               |
+| `GET /data/companies/{companyId}/templates.json`                     | `ReportTemplateIndex` | `404` unknown Company                                           |
+| `GET /data/companies/{companyId}/reports/{templateId}/{period}.json` | `Report`              | `404` unknown Company, unknown template, or Period, `500` error |
 
 A non-200 carries `{ "message": string }`. The message is for a developer reading
 a network tab, not for display.
@@ -31,10 +32,11 @@ a network tab, not for display.
    roots match it. A parent that also listed it would show the same money twice.
 4. **A Category's total equals its children's totals plus the Accounts it holds
    directly.** A client may rely on this and not re-add anything.
-5. **`templateId` is a stable slug**, never the display name, because it appears
-   in a shareable URL. Renaming a ReportTemplate must not break a bookmark.
-6. **The Periods listed in the index resolve.** If the index advertises a Period,
-   `GET` for it returns 200.
+5. **`templateId` and `companyId` are stable slugs**, never a display name,
+   because both appear in a shareable URL. Renaming a ReportTemplate or a
+   Company must not break a bookmark.
+6. **The Periods listed in a Company's ReportTemplate index resolve.** If it
+   advertises a Period, `GET` for it returns 200.
 7. **A Report never contains an AuxiliaryAccount.** Those are replaced by their
    ControlAccount before aggregation; see
    [ADR-0001](./adr/0001-ledger-and-reporting-bounded-contexts.md).
@@ -60,10 +62,32 @@ a network tab, not for display.
    scope is revenue and expense Accounts, so its balance-sheet Accounts are out
    of scope, not unmatched. A payload without `unmatched` is not a valid Report.
 
+10. **Every Report and ReportTemplateIndex carries the Company it belongs to.**
+    `company` is never omitted; a client treats its absence the same as a
+    missing `unmatched` — a failed load, not a Report to show. A
+    ReportTemplate is only ever offered under a Company whose `country`
+    matches the ReportTemplate's own; a Company's index never lists one that
+    does not apply to it.
+
+## CompaniesIndex
+
+```json
+{
+  "companies": [{ "id": "acme-freight", "name": "Acme Freight Cooperative", "country": "FR" }]
+}
+```
+
+| Field                 | Type   | Notes                       |
+| --------------------- | ------ | --------------------------- |
+| `companies[].id`      | string | Stable slug used in the URL |
+| `companies[].name`    | string | For display                 |
+| `companies[].country` | string | ISO 3166-1 alpha-2          |
+
 ## ReportTemplateIndex
 
 ```json
 {
+  "company": { "id": "acme-freight", "name": "Acme Freight Cooperative", "country": "FR" },
   "templates": [
     { "id": "french-profit-and-loss", "name": "Profit and loss", "periods": ["2015", "2016"] }
   ]
@@ -72,6 +96,7 @@ a network tab, not for display.
 
 | Field     | Type     | Notes                                |
 | --------- | -------- | ------------------------------------ |
+| `company` | Company  | The Company this index belongs to    |
 | `id`      | string   | Stable slug used in the Report URL   |
 | `name`    | string   | For display                          |
 | `periods` | string[] | Ascending; each resolves to a Report |
@@ -80,6 +105,7 @@ a network tab, not for display.
 
 ```json
 {
+  "company": { "id": "acme-freight", "name": "Acme Freight Cooperative", "country": "FR" },
   "templateId": "french-profit-and-loss",
   "templateName": "Profit and loss",
   "period": "2016",
@@ -101,17 +127,20 @@ a network tab, not for display.
         }
       ]
     }
-  ]
+  ],
+  "unmatched": { "label": "Unmatched", "total": "0.00", "children": [], "accounts": [] }
 }
 ```
 
 | Field          | Type       | Notes                                      |
 | -------------- | ---------- | ------------------------------------------ |
+| `company`      | Company    | See rule 10                                |
 | `templateId`   | string     | Matches the slug in the URL                |
 | `templateName` | string     | For display                                |
 | `period`       | string     | The FiscalYear, `YYYY`                     |
 | `currency`     | string     | ISO 4217                                   |
 | `categories`   | Category[] | Ordered as the ReportTemplate defines them |
+| `unmatched`    | Category   | See rule 9                                 |
 
 ### Category
 

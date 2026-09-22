@@ -35,7 +35,7 @@ function largeReport(breadth: number, depth: number, accounts: number): Report {
   });
 
   return {
-    company: { name: 'Bench Co' },
+    company: { id: 'bench-co', name: 'Bench Co', country: 'FR' },
     templateId: 'large',
     templateName: 'Large',
     period: '2016',

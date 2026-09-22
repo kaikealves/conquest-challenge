@@ -19,7 +19,11 @@ export function App() {
       <main className="mx-auto flex max-w-4xl flex-col gap-6 px-6 py-8">
         <Routes>
           <Route path="/" element={<ReportsPage />} />
-          <Route path="/reports/:templateId/:period?" element={<ReportsPage />} />
+          <Route path="/companies/:companyId" element={<ReportsPage />} />
+          <Route
+            path="/companies/:companyId/reports/:templateId/:period?"
+            element={<ReportsPage />}
+          />
           <Route path="*" element={<p>There is no page at this address.</p>} />
         </Routes>
       </main>

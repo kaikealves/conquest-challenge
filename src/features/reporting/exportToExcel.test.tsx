@@ -4,7 +4,7 @@ import ExcelJS from 'exceljs';
 import { http, HttpResponse } from 'msw';
 import { afterEach, beforeEach, expect, test, vi } from 'vitest';
 
-import { REPORT_URL_PATTERN, templateIndexUrl } from './api/contract.ts';
+import { REPORT_URL_PATTERN, TEMPLATE_INDEX_URL_PATTERN } from './api/contract.ts';
 import { server } from '../../shared/mocks/node.ts';
 
 import { renderApp } from '../../shared/testing/renderApp.tsx';
@@ -115,20 +115,24 @@ const totalOf = (sheet: ExcelJS.Worksheet, label: string) =>
   rowsOf(sheet).find(([text]) => text === label)?.[1];
 
 test('the Report on screen downloads as an Excel file named for it', async () => {
-  await exportFrom('/reports/french-profit-and-loss/2016');
+  await exportFrom('/companies/northwind-freight/reports/french-profit-and-loss/2016');
 
   expect(fileName).toBe('french-profit-and-loss-2016.xlsx');
 });
 
 test('amounts are numbers a spreadsheet can compute with, credits negative', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
 
   expect(totalOf(sheet, 'Operating expenses')).toBe(2350.5);
   expect(totalOf(sheet, 'Operating income')).toBe(-9125.25);
 });
 
 test('the Category hierarchy is kept as grouped rows, Accounts beneath their Category', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
   const rows = rowsOf(sheet);
   const at = (label: string) => rows.findIndex(([text]) => text === label);
 
@@ -144,7 +148,9 @@ test('the Category hierarchy is kept as grouped rows, Accounts beneath their Cat
 });
 
 test('the export is of the ReportTemplate and Period displayed', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2015');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2015',
+  );
 
   expect(totalOf(sheet, 'Operating expenses')).toBe(4701);
   expect(sheet.getCell('A1').value).toContain('Profit and loss');
@@ -152,26 +158,32 @@ test('the export is of the ReportTemplate and Period displayed', async () => {
 });
 
 test('the exported file says whose Company it is, so it is self-describing once it leaves the page', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
 
   expect(sheet.getCell('A1').value).toContain('Northwind Freight Cooperative');
 });
 
 test('the unmatched group is exported even when it is empty', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
 
   expect(totalOf(sheet, 'Unmatched')).toBe(0);
 });
 
 test('unmatched Accounts are exported with their amounts', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2015');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2015',
+  );
 
   expect(totalOf(sheet, 'Unmatched')).toBe(80);
   expect(totalOf(sheet, '471000 Compte d’attente')).toBe(80);
 });
 
 test('the Result of a BalanceSheet is exported like any other Category', async () => {
-  const sheet = await exportFrom('/reports/french-balance-sheet/2016');
+  const sheet = await exportFrom('/companies/northwind-freight/reports/french-balance-sheet/2016');
 
   expect(totalOf(sheet, 'Result')).toBe(-1000);
 });
@@ -182,7 +194,7 @@ test('a failed export says so and can be tried again', async () => {
     throw new Error('no disk');
   });
   vi.spyOn(console, 'error').mockImplementation(() => undefined);
-  renderApp('/reports/french-profit-and-loss/2016');
+  renderApp('/companies/northwind-freight/reports/french-profit-and-loss/2016');
 
   await user.click(await screen.findByRole('button', { name: 'Export to Excel' }));
 
@@ -195,16 +207,18 @@ async function exportOf(
   categories: unknown[],
   templateName = 'Custom',
 ): Promise<ExcelJS.Worksheet> {
+  const company = { id: 'northwind-freight', name: 'Custom Co', country: 'FR' };
+
   server.use(
-    http.get(templateIndexUrl(), () =>
+    http.get(TEMPLATE_INDEX_URL_PATTERN, () =>
       HttpResponse.json({
-        company: { name: 'Custom Co' },
+        company,
         templates: [{ id: 'custom', name: templateName, periods: ['2016'] }],
       }),
     ),
     http.get(REPORT_URL_PATTERN, () =>
       HttpResponse.json({
-        company: { name: 'Custom Co' },
+        company,
         templateId: 'custom',
         templateName,
         period: '2016',
@@ -215,7 +229,7 @@ async function exportOf(
     ),
   );
 
-  return exportFrom('/reports/custom/2016');
+  return exportFrom('/companies/northwind-freight/reports/custom/2016');
 }
 
 const withAccount = (code: string, name: string, total: string) => [
@@ -261,7 +275,9 @@ test('a whole-number amount still carries the currency’s decimals, as on scree
 });
 
 test('a Category’s rows are indented by depth and the header stays in view', async () => {
-  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+  const sheet = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
   const indent = (label: string) => rowOf(sheet, label).getCell(2).alignment?.indent ?? 0;
 
   expect(indent('Operating expenses')).toBe(0);
@@ -271,7 +287,7 @@ test('a Category’s rows are indented by depth and the header stays in view', a
 });
 
 test('the file’s address is not released until the browser has had time to fetch it', async () => {
-  await exportFrom('/reports/french-profit-and-loss/2016');
+  await exportFrom('/companies/northwind-freight/reports/french-profit-and-loss/2016');
 
   expect(revoke).not.toHaveBeenCalled();
 });

@@ -3,6 +3,7 @@ import { useReport } from './api/useReport.ts';
 import { ReportTable } from './components/ReportTable.tsx';
 
 type ReportScreenProps = {
+  readonly companyId: string;
   readonly templateId: string;
   readonly period: string;
 };
@@ -13,11 +14,17 @@ type ReportScreenProps = {
  * Four outcomes, kept apart because a user acts differently on each: still
  * working, failed and worth retrying, arrived but empty, arrived with figures.
  *
- * The ReportTemplate and Period arrive as props. The page above reads them from
- * the URL, so a Report can be bookmarked and shared.
+ * The Company, ReportTemplate and Period arrive as props. The page above reads
+ * them from the URL, so a Report can be bookmarked and shared.
  */
-export function ReportScreen({ templateId, period }: ReportScreenProps) {
-  const { data: report, isPending, isError, error, refetch } = useReport(templateId, period);
+export function ReportScreen({ companyId, templateId, period }: ReportScreenProps) {
+  const {
+    data: report,
+    isPending,
+    isError,
+    error,
+    refetch,
+  } = useReport(companyId, templateId, period);
 
   return (
     <>

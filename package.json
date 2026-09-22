@@ -19,7 +19,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e",
-    "dev:real": "npm run import -- brief/brignolles-gl.xml .local/real-ledger/data && vite --mode real",
+    "dev:real": "npm run import -- brief/brignolles-gl.xml .local/real-ledger/data --country=FR && npm run import -- tools/importer/fixtures/uk-style-chart-of-accounts.xml .local/real-ledger/data --country=GB --company-id=uk-demo-co --company-name=\"UK Demo Co\" && vite --mode real",
     "import": "tsx tools/importer/main.ts",
     "bench": "vitest bench --run"
   },

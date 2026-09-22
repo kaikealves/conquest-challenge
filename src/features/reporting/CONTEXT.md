@@ -14,9 +14,10 @@ _Avoid_: statement, output, view
 **Company**:
 The accounting entity a Report belongs to. Carried through from Ledger
 unchanged — this context does not reinterpret it — so it has one definition
-rather than two. There is one Company per running instance of this
-application; no selector exists. See
-[ADR-0009](../../../docs/adr/0009-company-is-a-shared-passthrough.md).
+rather than two. Selectable, alongside ReportTemplate and Period, in the URL.
+Its `country` decides which ReportTemplates apply to it. See
+[ADR-0009](../../../docs/adr/0009-company-is-a-shared-passthrough.md) and
+[ADR-0010](../../../docs/adr/0010-company-switcher.md).
 _Avoid_: client, tenant, organization, customer
 
 **BalanceSheet**:

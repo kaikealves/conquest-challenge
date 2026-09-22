@@ -6,7 +6,7 @@ import { expect, test } from '@playwright/test';
  * or a backend would answer, at the same URL.
  */
 const report = {
-  company: { name: 'Hierarchy Co' },
+  company: { id: 'hierarchy-co', name: 'Hierarchy Co', country: 'FR' },
   templateId: 'french-profit-and-loss',
   templateName: 'Profit and loss',
   period: '2016',
@@ -33,7 +33,10 @@ const report = {
 };
 
 test('expanding a Category down to its Accounts, and collapsing it again', async ({ page }) => {
-  await page.route('**/data/templates.json', (route) =>
+  await page.route('**/data/companies.json', (route) =>
+    route.fulfill({ json: { companies: [report.company] } }),
+  );
+  await page.route('**/data/companies/hierarchy-co/templates.json', (route) =>
     route.fulfill({
       json: {
         company: report.company,
@@ -41,7 +44,9 @@ test('expanding a Category down to its Accounts, and collapsing it again', async
       },
     }),
   );
-  await page.route('**/data/reports/**', (route) => route.fulfill({ json: report }));
+  await page.route('**/data/companies/hierarchy-co/reports/**', (route) =>
+    route.fulfill({ json: report }),
+  );
   await page.goto('/');
 
   await expect(page.getByText('613200')).toHaveCount(0);
