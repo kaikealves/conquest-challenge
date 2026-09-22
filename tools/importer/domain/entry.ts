@@ -49,7 +49,8 @@ export function reportedAccount(entry: Entry): AccountCode {
  * The name to show beside `reportedAccount`. An AuxiliaryAccount's name is one
  * customer's or supplier's, which must not label the ControlAccount above it,
  * and the Provider does not send the ControlAccount's own name — so it is blank
- * rather than wrong.
+ * rather than wrong. Reporting fills a blank one from the national chart's
+ * standard names; see `reporting/standardAccountNames.ts`.
  */
 export function reportedAccountName(entry: Entry): string {
   return entry.controlAccount === undefined ? entry.accountName : '';
