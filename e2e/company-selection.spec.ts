@@ -66,7 +66,7 @@ test('choosing a Company changes the Report and the address together', async ({ 
 
   await page.getByRole('combobox', { name: 'Company' }).selectOption('Beta Co');
 
-  await expect(page).toHaveURL(new RegExp(`/companies/${BETA.id}$`));
+  await expect(page).toHaveURL(new RegExp(`/companies/${BETA.id}/reports/report/2016$`));
   await expect(page.getByRole('row', { name: /Only in Beta/ })).toBeVisible();
   await expect(page.getByRole('row', { name: /Only in Alpha/ })).toHaveCount(0);
 });
