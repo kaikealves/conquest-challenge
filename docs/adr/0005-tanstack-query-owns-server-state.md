@@ -19,3 +19,5 @@ is a lifecycle primitive, not a cache.
 - Request deduplication and caching are the first-order performance win; `useMemo`
   is then reserved for the Chart of Accounts tree aggregation, where the CPU cost
   is real, rather than applied by reflex.
+
+_Updated by [ADR-0008](./0008-memoization-strategy.md): the tree aggregation moved to the importer (ADR-0006), so `useMemo` has no aggregation to guard, and the memoization that was done is recorded there._

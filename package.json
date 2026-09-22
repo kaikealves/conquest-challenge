@@ -19,7 +19,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:all": "npm run test && npm run test:e2e",
-    "import": "tsx tools/importer/main.ts"
+    "import": "tsx tools/importer/main.ts",
+    "bench": "vitest bench --run"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.103.1",
