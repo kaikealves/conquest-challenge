@@ -4,7 +4,7 @@
 
 **Blocked by:** 11 (Report fetched and rendered).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] Install and run instructions work from a fresh clone
 - [ ] Test commands are documented for each suite

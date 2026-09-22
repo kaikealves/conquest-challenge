@@ -4,7 +4,7 @@
 
 **Blocked by:** 19 (Dossier — data model and services model).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] The backend architecture is described with named framework and library recommendations
 - [ ] The import path is presented as asynchronous, streaming, idempotent and validated at the boundary

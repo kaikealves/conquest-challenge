@@ -4,7 +4,7 @@
 
 **Blocked by:** 09 (Unmatched Accounts surfaced).
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] The data model is described in domain terms: aggregate, entities, value objects
 - [ ] Transaction is presented as the aggregate root owning the zero-sum invariant
