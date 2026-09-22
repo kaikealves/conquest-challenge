@@ -17,5 +17,5 @@ AuxiliaryAccounts appears in a Report with a name, not just a code.
 ## Comments
 
 Raised by the user: 411100 showed with no name. The sample names every customer
-and supplier (`EDF`, …) but never 411100 or 401100 themselves, and neither is
+and supplier but never 411100 or 401100 themselves, and neither is
 posted to directly, so after the rollup the payload holds no name for them.

@@ -58,9 +58,8 @@ true.
 
 ### Review fixes
 
-**The mock fixture held the real company's figures.** `182433.83` and
-`783315.09` are SPV Brignolles' actual totals, taken from `brief/` in ticket 10
-and committed. `CLAUDE.md` forbids exactly that, and a summary of a third
+**The mock fixture held the real company's figures.** Two of its totals were
+the sample ledger's actual ones, taken from `brief/` in ticket 10 and committed. `CLAUDE.md` forbids exactly that, and a summary of a third
 party's ledger is still their data. The fixture now carries invented figures
 under the Category labels the real ReportTemplate produces, internally
 consistent so the contract's parent-equals-parts rule still holds. It was also
