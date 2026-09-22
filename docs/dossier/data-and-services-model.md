@@ -284,7 +284,7 @@ erDiagram
 | `company`             | `id`, `slug` (unique, used in URLs), `name`, `country`, `currency`                                                                                       | The slug is stable, so a renamed Company does not break a bookmarked URL                                 |
 | `provider`            | `id`, `code`, `format`                                                                                                                                   | Registry of connector types                                                                              |
 | `provider_connection` | `id`, `company_id`, `provider_id`, `external_ref`, `secret_ref`, `schedule`, `synced_through`                                                            | How one Company is reached at one Provider. Credentials live in a secret store; only a reference is kept |
-| `fiscal_year`         | `company_id`, `starts_on`, `ends_on`, `status`                                                                                                           | OPEN or CLOSED drives caching                                                                            |
+| `fiscal_year`         | `company_id`, `starts_on`, `ends_on`, `status`, `ledger_version`                                                                                         | OPEN or CLOSED drives caching; `ledger_version` increments when an import touches the year               |
 | `account`             | `company_id`, `code`, `name`, `control_account_code`                                                                                                     | The Chart of Accounts, including AuxiliaryAccounts                                                       |
 | `ledger_transaction`  | `company_id`, `id`, `provider_ref`, `journal_code`, `posted_on`, `label`, `import_run_id`                                                                | One accepted Transaction. (`transaction` is a reserved word in SQL.)                                     |
 | `entry`               | `company_id`, `id`, `transaction_id`, `account_code`, `posted_on`, `amount NUMERIC(19,4)`, `currency`, `opening_balance`, `provider_ref`, `content_hash` | The largest table by far. Unique on `(company_id, provider_ref)`; partitioned by `company_id`            |
@@ -473,7 +473,7 @@ version:
   `Accept: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
   returns the workbook. One resource, two representations.
 - **Caching headers.** Every Report carries an `ETag` built from the template
-  version and the Company's ledger version. A Report for a CLOSED FiscalYear
+  version and the FiscalYear's `ledger_version`. A Report for a CLOSED FiscalYear
   is also sent with a long `Cache-Control: private, max-age`; one for an OPEN
   FiscalYear is revalidated, and answered with `304 Not Modified` when nothing
   changed.
