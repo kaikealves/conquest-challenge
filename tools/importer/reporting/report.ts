@@ -7,6 +7,7 @@ import type {
   ResultDefinition,
   ReportKind,
 } from './reportTemplate.ts';
+import { standardAccountName } from './standardAccountNames.ts';
 
 /**
  * The payload that crosses to the application. Amounts are exact decimal
@@ -293,7 +294,16 @@ export function buildReport(
   currency: Currency,
   company: Company,
 ): Report {
-  const accounts = [...totals.values()].map((account) => forKind(account, template.kind));
+  const accounts = [...totals.values()]
+    .map((account) => forKind(account, template.kind))
+    .map((account) =>
+      // The payload's own name wins; the chart's is for an Account the Provider
+      // never named, such as a ControlAccount only ever posted to through its
+      // AuxiliaryAccounts.
+      account.name
+        ? account
+        : { ...account, name: standardAccountName(account.account, template.country) },
+    );
   const placement = placeAccounts(template.categories, accounts);
   const categories = template.categories.map((category) =>
     toCategory(aggregateCategory(category, placement, accounts, currency)),

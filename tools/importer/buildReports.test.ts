@@ -241,6 +241,29 @@ test('the same holds on the supplier side, where the balance is a credit', async
   ]);
 });
 
+test('a ControlAccount the Provider never names takes its name from the national chart', async () => {
+  // The payload names each customer and supplier, never 411100 or 401100 themselves.
+  const report = await partiesReport();
+  const named = report?.categories.flatMap((category) =>
+    category.accounts.map((account) => [account.code, account.name]),
+  );
+
+  expect(named).toEqual([
+    ['411100', 'Clients'],
+    ['401100', 'Fournisseurs'],
+    ['512000', 'Banque'],
+  ]);
+});
+
+test('under a chart with no standard names, an unnamed ControlAccount stays blank rather than guessed', async () => {
+  const [report] = await buildReports(inChunks(customerAndSupplierAuxiliaryAccounts), {
+    ...partiesAndBank,
+    country: 'ZZ',
+  });
+
+  expect(report?.categories[0]?.accounts[0]).toMatchObject({ code: '411100', name: '' });
+});
+
 test('no AuxiliaryAccount appears anywhere in a Report', async () => {
   // A template that matches every code the fixture has, so an AuxiliaryAccount
   // would be reported if it survived: an unmatched one is dropped and proves
