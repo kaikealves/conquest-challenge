@@ -163,7 +163,10 @@ export function ReportsPage() {
  * before a reader has to work it out from a Report's own heading, or from
  * nothing at all. There is one Company per running instance of this
  * application; see ADR-0009.
+ *
+ * A heading, not a plain paragraph: it is page-orienting content a reader
+ * might jump to directly, the same way `ReportTable`'s own heading is.
  */
 function CompanyHeading({ company }: { readonly company: Company }) {
-  return <p className="text-sm font-medium text-slate-500">{company.name}</p>;
+  return <h2 className="text-sm font-medium text-slate-500">{company.name}</h2>;
 }

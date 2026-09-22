@@ -6,13 +6,17 @@ import { companyNameFromFilename } from './companyName.ts';
  * A last-resort label when the importer is run with no Company name given.
  * There is nothing to be clever about: it takes the file it was handed and
  * makes it readable, nothing more.
+ *
+ * Fixture names here are invented — never the real ledger's filename. Its
+ * derived label is a fact about the real Company, which belongs no more in a
+ * committed assertion than a figure from it would.
  */
 test('turns a payload filename into a readable label', () => {
-  expect(companyNameFromFilename('brignolles-gl.xml')).toBe('Brignolles Gl');
+  expect(companyNameFromFilename('acme-freight-gl.xml')).toBe('Acme Freight Gl');
 });
 
 test('ignores the directories the file sits in', () => {
-  expect(companyNameFromFilename('brief/brignolles-gl.xml')).toBe('Brignolles Gl');
+  expect(companyNameFromFilename('brief/acme-freight-gl.xml')).toBe('Acme Freight Gl');
 });
 
 test('title-cases each word and collapses separators', () => {
@@ -20,7 +24,7 @@ test('title-cases each word and collapses separators', () => {
 });
 
 test('a file with no extension is used as-is', () => {
-  expect(companyNameFromFilename('brignolles-gl')).toBe('Brignolles Gl');
+  expect(companyNameFromFilename('acme-freight-gl')).toBe('Acme Freight Gl');
 });
 
 test('an all-caps stem is not shouted back', () => {
