@@ -18,12 +18,27 @@ if (!rootElement) {
  * importer first and can reach the failure cases on demand. In production the
  * same URLs are static JSON the importer wrote, per ADR-0007.
  *
+ * `real` mode (`npm run dev:real`) is development against the importer's own
+ * output, so the mock must be off — and a worker registered by an earlier
+ * ordinary `npm run dev` on this origin is still installed in the browser and
+ * would keep answering, so it is removed.
+ *
  * The import sits behind `import.meta.env.DEV` so the mock is never in the
  * bundle a user downloads — MSW's browser build is 158 kB gzipped, larger than
  * React, and shipping it was what ADR-0007 was written to stop.
  */
 async function startMockApiInDevelopment(): Promise<void> {
   if (!import.meta.env.DEV) {
+    return;
+  }
+
+  if (import.meta.env.MODE === 'real') {
+    // Absent on an insecure origin (a LAN address, say), where no worker can
+    // have been registered either.
+    const registrations = (await navigator.serviceWorker?.getRegistrations()) ?? [];
+
+    await Promise.all(registrations.map((registration) => registration.unregister()));
+
     return;
   }
 

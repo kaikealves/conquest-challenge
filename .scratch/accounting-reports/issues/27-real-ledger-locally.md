@@ -4,7 +4,7 @@
 
 **Blocked by:** None.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
 - [ ] A documented command runs the importer over the sample and starts the dev server with the mock API switched off, so `/data/` serves the importer's files from `public/data/`
 - [ ] The default `npm run dev` is unchanged: still MSW, still no importer needed
@@ -17,3 +17,10 @@
 Why a switch and not a change of default: tests and quick contributor work want the mock, and the real ledger must never be the thing a fresh clone depends on (the sample is a third party's record and is not in the repo).
 
 The real data is a ProfitAndLoss shape only until tickets 07 (OpeningBalance), 08 (CategoryRoot matching) and 09 (unmatched Accounts) land. Seeing it early is the point: it is how those tickets get checked against something real.
+
+## Delivered, with two deviations
+
+- Output goes to gitignored `.local/real-ledger/`, not `public/data/`: a build copies `public/` into `dist/`, so real figures there would ship. `vite build --mode real` refuses to run for the same reason.
+- Not tested: the missing-data-directory case for real mode specifically. The Report error state it would show is covered by ticket 12's tests.
+
+Details in `docs/real-ledger-locally.md`.

@@ -1,5 +1,5 @@
 import { createReadStream } from 'node:fs';
-import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, readdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -59,6 +59,10 @@ async function main(): Promise<void> {
   if (!payloadFile || !outputDir) {
     throw new Error('Usage: tsx tools/importer/main.ts <provider-payload.xml> <output-dir>');
   }
+
+  // A previous run's Reports would otherwise stay served after the ledger
+  // changed, including Periods the new ledger does not have.
+  await rm(path.join(outputDir, 'reports'), { recursive: true, force: true });
 
   const templates = await loadTemplates();
   const index: { id: string; name: string; periods: string[] }[] = [];

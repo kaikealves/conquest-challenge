@@ -61,7 +61,9 @@ function apiPathsAreNotApplicationRoutes(): Plugin {
       config = resolved;
     },
     configureServer(server) {
-      server.middlewares.use(middleware(() => config.root));
+      // Files a dev server serves as-is live in the public directory, so that is
+      // where "does this file exist" has to look.
+      server.middlewares.use(middleware(() => config.publicDir));
     },
     configurePreviewServer(server) {
       server.middlewares.use(middleware(() => path.join(config.root, config.build.outDir)));
@@ -97,11 +99,33 @@ function keepMockServiceWorkerOutOfTheBuild(): Plugin {
   };
 }
 
-export default defineConfig({
-  plugins: [
-    react(),
-    tailwindcss(),
-    apiPathsAreNotApplicationRoutes(),
-    keepMockServiceWorkerOutOfTheBuild(),
-  ],
+/**
+ * Where `real` mode's data lives: a directory of its own, never `public/`.
+ *
+ * `npm run build` copies `public/` into `dist/`, so real figures written there
+ * would ship in the next build. This directory is used only by `vite --mode
+ * real` and is gitignored, so the third party's ledger has no route into a
+ * bundle or a commit. The e2e run points it elsewhere with the variable.
+ */
+const REAL_LEDGER_DIR = process.env.REAL_LEDGER_PUBLIC_DIR ?? '.local/real-ledger';
+
+export default defineConfig(({ mode, command }) => {
+  // `real` mode points the public directory at the real ledger's output, and a
+  // build copies the public directory into `dist/`. Refusing is the only way
+  // `vite build --mode real` cannot ship a third party's figures.
+  if (mode === 'real' && command === 'build') {
+    throw new Error(
+      'Real-ledger mode is for local development only. Building in it would copy the real ledger into dist/.',
+    );
+  }
+
+  return {
+    ...(mode === 'real' ? { publicDir: REAL_LEDGER_DIR } : {}),
+    plugins: [
+      react(),
+      tailwindcss(),
+      apiPathsAreNotApplicationRoutes(),
+      keepMockServiceWorkerOutOfTheBuild(),
+    ],
+  };
 });
