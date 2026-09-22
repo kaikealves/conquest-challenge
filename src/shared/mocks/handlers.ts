@@ -173,6 +173,7 @@ function reportFor(period: string, scale: number): Report {
   return {
     company: NORTHWIND,
     unmatched: unmatchedFor(period, scale),
+    missingOpeningBalances: false,
     templateId: 'french-profit-and-loss',
     templateName: 'Profit and loss',
     period,
@@ -194,6 +195,7 @@ const balanceSheetFor = (period: string): Report => ({
   period,
   currency: 'EUR',
   unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  missingOpeningBalances: false,
   categories: [
     {
       label: 'Assets',
@@ -242,6 +244,7 @@ const riversideProfitAndLoss: Report = {
   period: '2016',
   currency: 'EUR',
   unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  missingOpeningBalances: false,
   categories: [
     {
       label: 'Turnover',

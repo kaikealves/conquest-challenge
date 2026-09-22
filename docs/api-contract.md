@@ -50,6 +50,13 @@ a network tab, not for display.
    excludes them. The payload does not say which kind a Report is; a client has
    no arithmetic to do that would need it.
 
+   `missingOpeningBalances` is true for a BalanceSheet whose Period carries
+   nothing forward although the ledger holds an earlier Period — as when a
+   ledger is exported before the previous FiscalYear is closed. Its figures are
+   then that year's movements, not balances, and a client says so beside them.
+   It is always false for a ProfitAndLoss and for the ledger's first Period. A
+   client reads its absence as false.
+
 9. **A Report accounts for every Account its ReportTemplate answers for, in
    `unmatched` if nowhere else.** `unmatched` is always present and shaped as a
    Category with no children. It holds the Accounts within the template's scope
@@ -132,15 +139,16 @@ a network tab, not for display.
 }
 ```
 
-| Field          | Type       | Notes                                      |
-| -------------- | ---------- | ------------------------------------------ |
-| `company`      | Company    | See rule 10                                |
-| `templateId`   | string     | Matches the slug in the URL                |
-| `templateName` | string     | For display                                |
-| `period`       | string     | The FiscalYear, `YYYY`                     |
-| `currency`     | string     | ISO 4217                                   |
-| `categories`   | Category[] | Ordered as the ReportTemplate defines them |
-| `unmatched`    | Category   | See rule 9                                 |
+| Field                    | Type       | Notes                                      |
+| ------------------------ | ---------- | ------------------------------------------ |
+| `company`                | Company    | See rule 10                                |
+| `templateId`             | string     | Matches the slug in the URL                |
+| `templateName`           | string     | For display                                |
+| `period`                 | string     | The FiscalYear, `YYYY`                     |
+| `currency`               | string     | ISO 4217                                   |
+| `categories`             | Category[] | Ordered as the ReportTemplate defines them |
+| `unmatched`              | Category   | See rule 9                                 |
+| `missingOpeningBalances` | boolean    | See rule 8                                 |
 
 ### Category
 

@@ -32,5 +32,7 @@ export async function buildReports(
 
   return [...byPeriod.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([period, totals]) => buildReport(totals, template, period, currency, company));
+    .map(([period, totals], index) =>
+      buildReport(totals, template, period, currency, company, index > 0),
+    );
 }

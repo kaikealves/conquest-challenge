@@ -86,6 +86,14 @@ export type Report = {
   /** ISO 4217. */
   readonly currency: string;
   readonly categories: readonly Category[];
+  /**
+   * True when this is a BalanceSheet for a Period that carried no balances
+   * forward from an earlier one, so its figures are that year's movements
+   * rather than balances. A client says so rather than presenting them as a
+   * position. Absent from a payload written before the field existed, which is
+   * read as false: it predates the check, and its figures are no worse for it.
+   */
+  readonly missingOpeningBalances?: boolean;
 };
 
 export type ReportTemplateSummary = {

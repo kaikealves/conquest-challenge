@@ -59,6 +59,15 @@ export type Report = {
   readonly period: string;
   readonly currency: Currency;
   readonly categories: readonly Category[];
+  /**
+   * True for a BalanceSheet whose Period holds no OpeningBalance Entries though
+   * an earlier Period exists in the ledger: nothing was carried forward, so its
+   * figures are that year's movements alone rather than balances. A ledger
+   * exported before the previous FiscalYear was closed looks like this. Always
+   * false for a ProfitAndLoss, which leaves carried-forward balances out anyway,
+   * and for the first Period, which has nothing before it to carry.
+   */
+  readonly missingOpeningBalances: boolean;
 };
 
 /**
@@ -123,6 +132,14 @@ function matches(account: AccountCode, category: CategoryDefinition | ResultDefi
 /** Whether the template answers for this Account; one with no `scope` answers for all. */
 function inScope(account: AccountCode, template: ReportTemplate): boolean {
   return template.scope === undefined || specificityUnder(account, template.scope) !== undefined;
+}
+
+/**
+ * Whether any Entry in the Period was an OpeningBalance. Read from the Accounts'
+ * carried-forward totals, which are non-zero wherever one was posted.
+ */
+function carriesAnythingForward(totals: AccountTotals): boolean {
+  return [...totals.values()].some(({ opening }) => opening.minorUnits !== 0n);
 }
 
 /** The label of the group holding Accounts no Category claimed. */
@@ -285,6 +302,10 @@ function resultAccounts(
  * Which Category an Account lands in is `placeAccounts`' decision. The Result
  * takes its own Accounts by its own CategoryRoots, from those no chart Category
  * has claimed. Anything neither takes is gathered into `unmatched`.
+ *
+ * `followsEarlierPeriod` says whether the ledger holds a Period before this one,
+ * which is what makes an absence of OpeningBalance Entries a gap rather than a
+ * beginning.
  */
 export function buildReport(
   totals: AccountTotals,
@@ -292,6 +313,7 @@ export function buildReport(
   period: string,
   currency: Currency,
   company: Company,
+  followsEarlierPeriod: boolean,
 ): Report {
   const accounts = [...totals.values()].map((account) => forKind(account, template.kind));
   const placement = placeAccounts(template.categories, accounts);
@@ -322,5 +344,7 @@ export function buildReport(
       ? [...categories, flatCategory(template.result.label, forResult, currency)]
       : categories,
     unmatched: flatCategory(UNMATCHED_LABEL, leftOver, currency),
+    missingOpeningBalances:
+      template.kind === 'BalanceSheet' && followsEarlierPeriod && !carriesAnythingForward(totals),
   };
 }
