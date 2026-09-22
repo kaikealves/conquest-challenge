@@ -1,275 +1,223 @@
-# Conquest Challenge: Accounting Reports
+# Financial Statements
 
-A React/TypeScript single-page application for importing and visualizing summarized accounting reports from general ledgers. The application presents accounting data as hierarchical, navigable reports — a Balance Sheet and a Profit & Loss statement — aggregated from a Chart of Accounts.
+A React/TypeScript single-page application that shows a company's balance
+sheet and profit and loss, summarised from its general ledger into categories
+defined by a report template, with drill-down to individual accounts and
+export to Excel. The Kotlin backend the brief asks for is designed in a written
+dossier; it is not implemented.
 
-## Getting Started
+## Start here
 
-### Prerequisites
+| If you want to…                           | Read or run                                                                                    |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| See the application                       | `npm install && npm run dev`, then open <http://localhost:5173>                                |
+| See it on the supplied sample ledger      | `npm run dev:real` — see [Running on the sample ledger](#running-on-the-sample-ledger)         |
+| Read the backend design                   | [Dossier part 1: data model and services model](./docs/dossier/data-and-services-model.md)     |
+|                                           | [Dossier part 2: architecture and performance](./docs/dossier/architecture-and-performance.md) |
+| Read the API contract                     | [docs/api-contract.md](./docs/api-contract.md)                                                 |
+| See why things are the way they are       | [Architecture decision records](./docs/adr/)                                                   |
+| Learn the domain vocabulary the code uses | [CONTEXT-MAP.md](./CONTEXT-MAP.md)                                                             |
 
-- **Node.js** 20.19.0 or 22.12.0+
+## The brief, and where each part is answered
 
-### Installation
+| The brief asks for                                                  | Where                                                                                                                                                                                   |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A data model, a services model                                      | [Dossier part 1](./docs/dossier/data-and-services-model.md)                                                                                                                             |
+| An architectural blueprint with Java/Kotlin libraries, argued       | [Dossier part 2](./docs/dossier/architecture-and-performance.md), sections 1–4                                                                                                          |
+| Performance issues and solutions                                    | [Dossier part 2](./docs/dossier/architecture-and-performance.md), sections 5–6                                                                                                          |
+| The most relevant interface contracts (API)                         | [docs/api-contract.md](./docs/api-contract.md); the client's side in [`api/contract.ts`](./src/features/reporting/api/contract.ts)                                                      |
+| A component that fetches from a mock API, with loading/error states | [`ReportScreen.tsx`](./src/features/reporting/ReportScreen.tsx) and [`useReport.ts`](./src/features/reporting/api/useReport.ts), against [MSW handlers](./src/shared/mocks/handlers.ts) |
+| Parse the sample file                                               | [`tools/importer/providers/wcfGeneralLedger.ts`](./tools/importer/providers/wcfGeneralLedger.ts), a streaming XML parser                                                                |
+| Summarise by chart of accounts or date range                        | [`tools/importer/reporting/report.ts`](./tools/importer/reporting/report.ts): category roots per template, one report per fiscal year                                                   |
+| Display the summary, handling the hierarchical chart of accounts    | [`ReportTable.tsx`](./src/features/reporting/components/ReportTable.tsx) and [`CategoryRow.tsx`](./src/features/reporting/components/CategoryRow.tsx), which recurses to any depth      |
+| Balance sheet with assets = liabilities                             | The importer adds a Result category so a balance sheet nets to zero; the table ends on a visible balance check                                                                          |
+| Several report templates, exportable to Excel                       | [`tools/importer/templates/`](./tools/importer/templates/); [`export/buildWorkbook.ts`](./src/features/reporting/export/buildWorkbook.ts)                                               |
+| Memoization or lazy loading, with the reasoning                     | [ADR-0008](./docs/adr/0008-memoization-strategy.md), with measurements (`npm run bench`); ExcelJS is loaded only when a user exports                                                    |
+
+## What the application does
+
+- **Balance sheet and profit and loss**, each a tree of categories that expands
+  down to the accounts in it. A profit and loss ends on its net result; a
+  balance sheet ends on the check that it balances.
+- **Several companies**, each with its own chart of accounts and the report
+  templates that fit it: a French company's revenue accounts start with 7, a
+  UK company's with 4.
+- **Company, template and period live in the URL**, so any report can be
+  bookmarked or sent to a colleague, and Back works as expected.
+- **Nothing is silently dropped.** Accounts that no category claims are shown
+  in an Unmatched group with their total, so an incomplete template shows up
+  as a figure rather than a gap.
+- **A balance sheet that carried nothing forward says so.** The sample ledger
+  was exported mid-2017, before 2016 was closed, so its 2017 balance sheet
+  holds that year's movements only; the page warns about it instead of
+  presenting them as balances.
+- **Loading, empty and error states**, with a retry button. Reports already
+  visited are shown instantly from the cache.
+- **Excel export** of the report on screen, with the category tree kept as
+  grouped rows and amounts as numbers a spreadsheet can compute with.
+- **Exact amounts.** Money is carried as integer minor units and crosses the
+  API as decimal strings, never as floating point.
+
+## How it fits together
+
+```
+Provider payload (XML)  →  importer (tools/importer/)  →  Report JSON  →  React application (src/)
+                           parse, roll up sub-accounts,    /data/…         fetch, cache, render,
+                           aggregate by template                           export
+```
+
+- **`tools/importer/`** holds all the accounting logic and never runs in a
+  browser. It stands in for the backend at build time: it reads a Provider
+  payload and writes the JSON the application fetches
+  ([ADR-0006](./docs/adr/0006-importer-is-a-tool-outside-the-application.md)).
+- **`src/`** is the React application. It holds no domain model and does no
+  arithmetic on amounts; it renders reports that arrive already computed.
+- **The API** is the set of URLs in [docs/api-contract.md](./docs/api-contract.md).
+  In development and tests, [MSW](https://mswjs.io/) answers them with invented
+  figures ([ADR-0003](./docs/adr/0003-no-backend-msw-is-the-api-boundary.md));
+  otherwise they are static JSON written by the importer
+  ([ADR-0007](./docs/adr/0007-static-json-is-the-api-not-msw.md)). Replacing
+  either with a real backend is a base-URL change.
+- **Server state** belongs to TanStack Query: caching, request deduplication,
+  retries, and loading and error states come from one place, and no component
+  fetches in a `useEffect` ([ADR-0005](./docs/adr/0005-tanstack-query-owns-server-state.md)).
+
+### Source layout
+
+```
+src/
+├── App.tsx                       # Shell and routes
+├── features/reporting/           # The one feature (ADR-0004: feature-first layout)
+│   ├── CONTEXT.md                # Reporting glossary
+│   ├── ReportsPage.tsx           # Resolves Company → template → period from the URL
+│   ├── ReportScreen.tsx          # Fetches one Report; loading, error, empty, ready
+│   ├── api/                      # Contract types and TanStack Query hooks
+│   ├── components/               # Table, rows, choosers, export button
+│   └── export/                   # Excel workbook, loaded on demand
+└── shared/
+    ├── mocks/                    # MSW handlers: the API in tests and development
+    └── queryClient.ts            # Retry and caching policy
+
+tools/importer/
+├── CONTEXT.md                    # Ledger glossary
+├── main.ts                       # CLI entry point
+├── providers/                    # Anti-corruption layer for each Provider format
+├── domain/                       # Entry, AccountCode, Money
+├── reporting/                    # Aggregation into Reports
+├── templates/                    # Report templates (JSON)
+└── fixtures/                     # Small purpose-built ledgers, one per test case
+```
+
+### Bounded contexts
+
+The code is split into two contexts with separate vocabularies: **Ledger**
+(entries posted to accounts, as received) and **Reporting** (categories and
+reports). The word "account" means something different on each side: a
+customer's own sub-account exists in the ledger but is rolled up into its
+control account before reporting. See [CONTEXT-MAP.md](./CONTEXT-MAP.md) and
+[ADR-0001](./docs/adr/0001-ledger-and-reporting-bounded-contexts.md).
+
+### Architecture decisions
+
+| ADR                                                                   | Decision                                                       |
+| --------------------------------------------------------------------- | -------------------------------------------------------------- |
+| [0001](./docs/adr/0001-ledger-and-reporting-bounded-contexts.md)      | Ledger and Reporting are separate bounded contexts             |
+| [0002](./docs/adr/0002-importer-is-an-anti-corruption-layer.md)       | The importer is an anti-corruption layer                       |
+| [0003](./docs/adr/0003-no-backend-msw-is-the-api-boundary.md)         | No backend in scope; MSW defines the API boundary              |
+| [0004](./docs/adr/0004-feature-first-source-layout.md)                | Feature-first source layout                                    |
+| [0005](./docs/adr/0005-tanstack-query-owns-server-state.md)           | TanStack Query owns server state                               |
+| [0006](./docs/adr/0006-importer-is-a-tool-outside-the-application.md) | The importer is a tool outside the application                 |
+| [0007](./docs/adr/0007-static-json-is-the-api-not-msw.md)             | Static JSON is the API; MSW is for tests                       |
+| [0008](./docs/adr/0008-memoization-strategy.md)                       | Memoize what was measured to cost something, and nothing else  |
+| [0009](./docs/adr/0009-company-is-a-shared-passthrough.md)            | Company is carried through unchanged, owned by neither context |
+| [0010](./docs/adr/0010-company-switcher.md)                           | Company becomes a real, selectable entity                      |
+
+## Running it
+
+Requires Node.js 20.19+ or 22.12+.
 
 ```bash
 npm install
+npm run dev          # http://localhost:5173, served by the mock API
 ```
 
-### Running the Application
+### Running on the sample ledger
 
-#### Development mode (with mock API)
-
-```bash
-npm run dev
-```
-
-The application opens at `http://localhost:5173` with a mock API serving sample data via [MSW](https://mswjs.io/). No importer setup is needed.
-
-#### Real ledger mode (optional)
-
-To develop against the importer's own output:
+The supplied sample is a third party's real accounting record, so it is not in
+the repository and nothing derived from it is committed. To run on it, place it
+at `brief/brignolles-gl.xml` and run:
 
 ```bash
 npm run dev:real
 ```
 
-**Note:** This requires the sample ledger to be present. See [Real Ledger Data](#real-ledger-data) below.
+This runs the importer over the sample, writes its output to
+`.local/real-ledger/data/` (gitignored), and starts the application on it with
+the mock API switched off. It also imports a small synthetic UK company, so
+the company switcher has two differently structured charts to switch between.
+Details, and how to import another ledger, are in
+[docs/real-ledger-locally.md](./docs/real-ledger-locally.md).
 
-#### Production build
+### The importer on its own
 
 ```bash
-npm run build
+npm run import -- <payload.xml> <output-dir>/data --country=FR [--company-id=…] [--company-name=…]
 ```
 
-Output is written to `dist/`. Preview locally with:
+`--country` selects the report templates whose chart of accounts applies.
+
+## Tests and checks
 
 ```bash
-npm run preview
-```
-
-## Testing
-
-The application has three test suites, each with a distinct seam:
-
-### Unit and integration tests
-
-```bash
-npm run test          # Run once
-npm run test:watch    # Re-run on file changes
-```
-
-Tests use Vitest + React Testing Library. They assert behaviour at the highest visible seam: the importer (Provider payload in, Report JSON out) and the application rendered against MSW.
-
-Each test uses a small, purpose-built fixture rather than the sample ledger; fixtures are named for the case they cover (e.g., `openingBalanceEntries`, `unmatchedAccounts`).
-
-### End-to-end tests
-
-```bash
-npm run test:e2e
-```
-
-Playwright tests exercise the full application in a browser. They verify that features work as the user experiences them.
-
-### All tests
-
-```bash
-npm run test:all
-```
-
-Runs both unit/integration and end-to-end suites.
-
-## Code Quality
-
-### Type checking
-
-```bash
+npm test             # Vitest: importer and application
+npm run test:e2e     # Playwright, in Chromium
 npm run typecheck
+npm run lint
+npm run format:check
+npm run bench        # The render measurements behind ADR-0008
 ```
 
-TypeScript is enforced at build time and when running tests. The project refuses to build with type errors.
+CI runs all of these, plus a production build, on every pull request.
 
-### Linting
+Tests assert behaviour at the two highest seams, never implementation details:
 
-```bash
-npm run lint          # Check only
-npm run lint:fix      # Auto-fix issues
-```
+1. **The importer:** a Provider payload in, Report JSON out.
+2. **The application:** rendered against the MSW handlers, and queried by role
+   and accessible name as a user would find things.
 
-Uses ESLint with rules for React and React Hooks. Some rules are enforced (e.g., object types must use `type`, never `interface`; no classes).
-
-### Formatting
-
-```bash
-npm run format        # Format all files
-npm run format:check  # Check without writing
-```
-
-Uses Prettier. Formatting is enforced in CI.
-
-## Architecture
-
-### High-level overview
-
-Accounting data flows through three stages:
-
-1. **Import**: An external provider's format is translated into a flat general ledger of balanced Transactions.
-2. **Aggregation**: Entries are grouped into Categories according to a ReportTemplate, producing summarized Reports.
-3. **Presentation**: A React application fetches and displays Reports as hierarchical, navigable UI.
-
-The import and aggregation stages run at build time; the application holds no domain model of its own and renders already-computed data.
-
-### Bounded contexts
-
-The system is divided into two bounded contexts, each with its own vocabulary:
-
-- **[Ledger](./tools/importer/CONTEXT.md)**: Receives accounting data and models it as Entries posted to Accounts. Lives entirely in `tools/importer/` because nothing runs in a browser. Applies an anti-corruption layer to translate provider vocabulary.
-
-- **[Reporting](./src/features/reporting/CONTEXT.md)**: Aggregates Entries into Categories to produce summaries. Split across the boundary: aggregation in the importer, presentation in React.
-
-For details, see [CONTEXT-MAP.md](./CONTEXT-MAP.md).
-
-### Architecture decisions
-
-Key decisions are documented as Architecture Decision Records in [`docs/adr/`](./docs/adr/):
-
-- **[ADR-0001](./docs/adr/0001-ledger-and-reporting-bounded-contexts.md)**: Two bounded contexts (Ledger and Reporting) with separate vocabularies.
-- **[ADR-0002](./docs/adr/0002-importer-is-an-anti-corruption-layer.md)**: Provider vocabulary is translated at the boundary, never entering the domain model.
-- **[ADR-0003](./docs/adr/0003-no-backend-msw-is-the-api-boundary.md)**: No backend is implemented; MSW (Mock Service Worker) stands in as the API during development.
-- **[ADR-0005](./docs/adr/0005-tanstack-query-owns-server-state.md)**: TanStack Query (React Query) manages all server state; never use `useEffect` for fetching.
-- **[ADR-0006](./docs/adr/0006-importer-is-a-tool-outside-the-application.md)**: The importer is a build-time tool, not a deployed service.
-- **[ADR-0007](./docs/adr/0007-static-json-is-the-api-not-msw.md)**: In production, the API is static JSON written by the importer, not MSW.
-- **[ADR-0008](./docs/adr/0008-memoization-strategy.md)**: Memoization strategy for the importer pipeline.
-- **[ADR-0009](./docs/adr/0009-company-is-a-shared-passthrough.md)**: Company is a shared value passed unchanged across boundaries.
-- **[ADR-0010](./docs/adr/0010-company-switcher.md)**: Users can switch between Companies, each with its own Chart of Accounts.
-
-### Directory structure
-
-```
-.
-├── src/                           # React application
-│   ├── features/
-│   │   └── reporting/            # Reporting feature (only bounded context in React)
-│   │       ├── CONTEXT.md        # Domain language for Reporting
-│   │       ├── api/              # Fetching and contract
-│   │       └── ui/               # React components
-│   └── shared/
-│       ├── mocks/               # MSW handlers (development only)
-│       └── queryClient.ts       # TanStack Query configuration
-│
-├── tools/importer/               # Importer (build-time tool, never runs in browser)
-│   ├── CONTEXT.md               # Domain language for Ledger
-│   ├── main.ts                  # Entry point
-│   ├── fixtures/                # Test fixtures (purpose-built, not sample data)
-│   └── [pipeline code]
-│
-├── docs/
-│   ├── adr/                     # Architecture Decision Records
-│   └── agents/                  # Agent skill documentation
-│
-├── CONTEXT-MAP.md               # Relationships between bounded contexts
-├── CLAUDE.md                    # Project conventions and instructions
-└── .scratch/
-    └── accounting-reports/      # Tickets and specification (development only)
-```
-
-## Features
-
-### What's implemented
-
-- 📊 **Hierarchical reports**: Balance Sheet and Profit & Loss statements that expand from Category to individual Account.
-- 🔄 **Company switcher**: Choose which Company to view; each has its own Chart of Accounts.
-- 📋 **Template selection**: Apply different ReportTemplates to the same data.
-- 📅 **Period selection**: View reports for different time periods.
-- 📈 **Balanced statements**: Balance Sheet verifies that assets equal liabilities; Result reconciles to Profit & Loss.
-- 🔗 **Shareable URLs**: Reports are reflected in the URL for bookmarking and sharing.
-- 📥 **Excel export**: Export reports to Excel (selected accounts/categories only).
-- ⚡ **Instant navigation**: Previously viewed Reports are cached and reappear instantly.
-- 🐛 **Error recovery**: Clear error messages with a retry button for failed requests.
-
-### Out of scope (deliberate omissions)
-
-- **Backend implementation**: The importer is a build-time tool. In production, it outputs static JSON; no server is deployed. (See [ADR-0006](./docs/adr/0006-importer-is-a-tool-outside-the-application.md) and [ADR-0007](./docs/adr/0007-static-json-is-the-api-not-msw.md).)
-- **Deploy to production**: The application is designed to run locally for review. (See priority notes.)
-- **Integration with external accounting systems beyond XML import**: Only the XML provider format is implemented.
-- **Advanced charting**: Reports are tables, not graphs (though amounts are formatted consistently with currency).
-
-## The Brief's "React component that fetches from a mock API"
-
-The **Report screen** (`src/features/reporting/ui/Report.tsx`) satisfies the brief's requirement for "a React component that fetches data from a mock API (e.g. JSONPlaceholder), manages loading/error states."
-
-The component:
-
-- Fetches Report data from the `/api/reports/:template/:period` endpoint.
-- Displays a loading indicator while fetching.
-- Shows a clear error message with a retry button on failure.
-- Manages state via TanStack Query, which handles retries, caching, and deduplication.
-
-In development, the API is provided by MSW. In production, it is static JSON. Either way, the component is unaware of the implementation detail.
-
-## Real Ledger Data
-
-To develop against a real accounting ledger:
-
-1. Place the XML ledger file at `brief/brignolles-gl.xml`.
-2. Place the Chart of Accounts XML at `brief/chart-of-accounts.xml` (or use the provided UK demo).
-3. Run:
-   ```bash
-   npm run dev:real
-   ```
-
-The importer writes data to `.local/real-ledger/data`, and the application serves it from there.
-
-**Why `brief/` and `.local/` are not committed:**
-
-- `brief/` contains third-party real accounting data, supplied by the employer. It is confidential and must not be committed to version control.
-- `.local/` is derived from `brief/` and carries the same confidentiality.
-- The deployed site builds from a synthetic ledger, so neither ever reaches production.
-
-For security: `.gitignore` excludes both directories. Never commit anything derived from `brief/`.
+Each test uses a small fixture named for the case it covers, such as
+`a-year-that-carries-nothing-forward.xml` or
+`customer-and-supplier-auxiliary-accounts.xml`. The sample ledger is never a
+test fixture: a failure among 6,774 entries is not legible.
 
 ## Stack
 
-| Concern       | Choice                                         |
-| ------------- | ---------------------------------------------- |
-| Build         | Vite 8, React 19, TypeScript                   |
-| Styling       | Tailwind 4 (CSS-first via `@tailwindcss/vite`) |
-| UI primitives | shadcn/ui (built on Radix)                     |
-| Routing       | react-router                                   |
-| Server state  | TanStack Query 5                               |
-| Mock API      | MSW 2 (handlers are the API contract)          |
-| Tests         | Vitest + React Testing Library + Playwright    |
-| Code quality  | ESLint + Prettier                              |
-| Excel export  | ExcelJS 4                                      |
+| Concern      | Choice                                        |
+| ------------ | --------------------------------------------- |
+| Build        | Vite 8, React 19, TypeScript                  |
+| Styling      | Tailwind 4, CSS-first via `@tailwindcss/vite` |
+| Routing      | React Router                                  |
+| Server state | TanStack Query 5                              |
+| Mock API     | MSW 2                                         |
+| Tests        | Vitest, React Testing Library, Playwright     |
+| Code quality | ESLint, Prettier                              |
+| Excel export | ExcelJS 4                                     |
 
-## Contributing
+## Scope
 
-When working on a ticket:
+Deliberately not built:
 
-1. Create a branch named `feat/<ticket-number>-<slug>` (e.g., `feat/21-readme`).
-2. Work the ticket to completion and open a pull request.
-3. Do not merge — the author (user) reviews and merges on GitHub.
+- **The backend.** It is designed in the dossier; the importer stands in for it
+  at build time.
+- **A hosted deployment.** Reviewing locally with `npm run dev` or
+  `npm run dev:real` shows everything. A production build serves whatever
+  importer output is under `public/data/`, which is empty in the repository.
+- **Providers other than the sample's XML format.** The anti-corruption layer
+  in `tools/importer/providers/` is where a JSON or CSV Provider would go.
+- **Carrying balances forward** into a year that has none. The application
+  flags such a balance sheet; rolling the previous year's closing balances
+  forward is the natural next step in the importer.
 
-For naming conventions and vocabulary, see [CONTEXT-MAP.md](./CONTEXT-MAP.md) and the `CONTEXT.md` files in each bounded context.
-
-## Troubleshooting
-
-**MSW not starting in development:**
-
-- Check the browser console for errors.
-- Clear service worker registrations: in DevTools > Application > Service Workers, click "Unregister" on any entries.
-- Run `npm run dev` again.
-
-**Tests timing out:**
-
-- MSW may be slow to start in the test environment. Run a single test file first to verify setup:
-  ```bash
-  npm run test -- src/App.test.tsx
-  ```
-
-**Type errors at build:**
-
-- Run `npm run typecheck` to see all errors.
-- The project refuses to build with outstanding type errors.
-
-## Support
-
-For help with Claude Code or this project structure, see [CLAUDE.md](./CLAUDE.md).
+The work was planned as tickets in
+[`.scratch/accounting-reports/`](./.scratch/accounting-reports/), each shipped
+as its own pull request.
