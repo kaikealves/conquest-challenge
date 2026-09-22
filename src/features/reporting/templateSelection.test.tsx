@@ -12,6 +12,7 @@ import { renderApp } from '../../shared/testing/renderApp.tsx';
  * The URL itself is asserted in a real browser (`e2e/`), where there is one.
  */
 const chooser = () => screen.findByRole('combobox', { name: 'Report template' });
+const TEST_COMPANY = { name: 'Test Co' };
 
 test('the available ReportTemplates are listed', async () => {
   renderApp();
@@ -68,7 +69,7 @@ test('an address that is no page of the application says so', async () => {
 });
 
 const indexOf = (templates: unknown[]) =>
-  http.get(templateIndexUrl(), () => HttpResponse.json({ templates }));
+  http.get(templateIndexUrl(), () => HttpResponse.json({ company: TEST_COMPANY, templates }));
 
 test('an id that is not path-safe still reaches its own Report', async () => {
   const requested: string[] = [];
@@ -79,6 +80,7 @@ test('an id that is not path-safe still reaches its own Report', async () => {
     indexOf([{ id: 'a b/c', name: 'Odd id', periods: ['2016'] }]),
     http.get(REPORT_URL_PATTERN, () =>
       HttpResponse.json({
+        company: TEST_COMPANY,
         templateId: 'a b/c',
         templateName: 'Odd id',
         period: '2016',
@@ -101,6 +103,7 @@ test('a list of ReportTemplates that fails to load can be asked for again', asyn
     http.get(templateIndexUrl(), () =>
       recovered
         ? HttpResponse.json({
+            company: TEST_COMPANY,
             templates: [{ id: 'french-profit-and-loss', name: 'French', periods: ['2016'] }],
           })
         : HttpResponse.json({ message: 'down' }, { status: 404 }),
@@ -139,4 +142,15 @@ test('the latest Period is the one shown when the link names none', async () => 
   expect(await screen.findByRole('row', { name: /Operating expenses/ })).toHaveTextContent(
     '€2,350.50',
   );
+});
+
+test('a ReportTemplate index without its Company is a failed load', async () => {
+  server.use(
+    http.get(templateIndexUrl(), () =>
+      HttpResponse.json({ templates: [{ id: 'x', name: 'X', periods: ['2016'] }] }),
+    ),
+  );
+  renderApp();
+
+  expect(await screen.findByRole('button', { name: /try again/i })).toBeVisible();
 });

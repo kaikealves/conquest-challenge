@@ -8,6 +8,7 @@ import { expect, test, type Page } from '@playwright/test';
 const summary = (id: string, name: string) => ({ id, name, periods: ['2016'] });
 
 const reportNamed = (id: string, name: string, label: string) => ({
+  company: { name: 'Two Templates Co' },
   templateId: id,
   templateName: name,
   period: '2016',
@@ -19,7 +20,10 @@ const reportNamed = (id: string, name: string, label: string) => ({
 async function serveTwoTemplates(page: Page) {
   await page.route('**/data/templates.json', (route) =>
     route.fulfill({
-      json: { templates: [summary('alpha', 'Alpha'), summary('beta', 'Beta')] },
+      json: {
+        company: { name: 'Two Templates Co' },
+        templates: [summary('alpha', 'Alpha'), summary('beta', 'Beta')],
+      },
     }),
   );
   await page.route('**/data/reports/alpha/2016.json', (route) =>

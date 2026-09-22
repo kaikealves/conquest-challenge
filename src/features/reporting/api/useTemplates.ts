@@ -17,7 +17,15 @@ export function useTemplates(): UseQueryResult<ReportTemplateIndex> {
         );
       }
 
-      return (await response.json()) as ReportTemplateIndex;
+      const index = (await response.json()) as Partial<ReportTemplateIndex>;
+
+      // The contract says `company` is always present. Without it this is an
+      // older file, from before the index said whose ReportTemplates these are.
+      if (index.company === undefined) {
+        throw httpError('The ReportTemplate index is missing its Company.', response.status);
+      }
+
+      return index as ReportTemplateIndex;
     },
   });
 }

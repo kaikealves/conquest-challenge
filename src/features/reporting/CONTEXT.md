@@ -11,6 +11,14 @@ A summary of Entries aggregated into Categories over a Period, shaped by a
 ReportTemplate.
 _Avoid_: statement, output, view
 
+**Company**:
+The accounting entity a Report belongs to. Carried through from Ledger
+unchanged — this context does not reinterpret it — so it has one definition
+rather than two. There is one Company per running instance of this
+application; no selector exists. See
+[ADR-0009](../../../docs/adr/0009-company-is-a-shared-passthrough.md).
+_Avoid_: client, tenant, organization, customer
+
 **BalanceSheet**:
 A Report of the balance-sheet Accounts at a point in time, in which assets equal
 liabilities. Includes OpeningBalance Entries.

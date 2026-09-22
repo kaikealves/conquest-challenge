@@ -7,12 +7,16 @@ import { expect, test } from '@playwright/test';
 test('money the ReportTemplate does not cover is shown, not dropped', async ({ page }) => {
   await page.route('**/data/templates.json', (route) =>
     route.fulfill({
-      json: { templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }] },
+      json: {
+        company: { name: 'Unmatched Co' },
+        templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }],
+      },
     }),
   );
   await page.route('**/data/reports/alpha/2016.json', (route) =>
     route.fulfill({
       json: {
+        company: { name: 'Unmatched Co' },
         templateId: 'alpha',
         templateName: 'Alpha',
         period: '2016',

@@ -4,7 +4,10 @@ import path from 'node:path';
 import process from 'node:process';
 
 import { buildReports } from './buildReports.ts';
+import { companyNameFromFilename } from './companyName.ts';
+import type { Company } from './reporting/report.ts';
 import type { ReportTemplate } from './reporting/reportTemplate.ts';
+import type { ReportTemplateSummary } from './reporting/reportTemplateIndex.ts';
 
 /**
  * The importer, run at build time. It stands in for the backend described in the
@@ -54,25 +57,32 @@ async function writeJson(file: string, value: unknown): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const [payloadFile, outputDir] = process.argv.slice(2);
+  const [payloadFile, outputDir, companyName] = process.argv.slice(2);
 
   if (!payloadFile || !outputDir) {
-    throw new Error('Usage: tsx tools/importer/main.ts <provider-payload.xml> <output-dir>');
+    throw new Error(
+      'Usage: tsx tools/importer/main.ts <provider-payload.xml> <output-dir> [company-name]',
+    );
   }
+
+  // Given, used as-is; omitted, derived from the payload's own filename. Either
+  // way this never writes a name into a file that gets committed — see
+  // ADR-0009.
+  const company: Company = { name: companyName ?? companyNameFromFilename(payloadFile) };
 
   // A previous run's Reports would otherwise stay served after the ledger
   // changed, including Periods the new ledger does not have.
   await rm(path.join(outputDir, 'reports'), { recursive: true, force: true });
 
   const templates = await loadTemplates();
-  const index: { id: string; name: string; periods: string[] }[] = [];
+  const index: ReportTemplateSummary[] = [];
 
   for (const template of templates) {
     // One pass per template. Re-reading the file costs seconds and keeps memory
     // proportional to one template's Accounts rather than to every template's at
     // once; if that ever stops being the right trade, it is the moment the
     // backend this design describes earns its place.
-    const reports = await buildReports(payloadChunks(payloadFile), template);
+    const reports = await buildReports(payloadChunks(payloadFile), template, company);
 
     for (const report of reports) {
       await writeJson(
@@ -88,10 +98,10 @@ async function main(): Promise<void> {
     });
   }
 
-  await writeJson(path.join(outputDir, 'templates.json'), { templates: index });
+  await writeJson(path.join(outputDir, 'templates.json'), { company, templates: index });
 
   process.stdout.write(
-    `Wrote ${String(index.reduce((n, t) => n + t.periods.length, 0))} Reports for ${String(index.length)} ReportTemplates into ${outputDir}\n`,
+    `Wrote ${String(index.reduce((n, t) => n + t.periods.length, 0))} Reports for ${String(index.length)} ReportTemplates (${company.name}) into ${outputDir}\n`,
   );
 }
 

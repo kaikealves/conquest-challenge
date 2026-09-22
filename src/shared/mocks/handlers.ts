@@ -19,7 +19,11 @@ import {
  * production never returns.
  */
 
+/** Invented, like every other figure in this file — not the real ledger's owner. */
+const COMPANY = { name: 'Northwind Freight Cooperative' };
+
 const templates: ReportTemplateIndex = {
+  company: COMPANY,
   templates: [
     { id: 'french-profit-and-loss', name: 'Profit and loss', periods: ['2015', '2016'] },
     { id: 'french-balance-sheet', name: 'Balance sheet', periods: ['2015', '2016'] },
@@ -148,6 +152,7 @@ function unmatchedFor(period: string, scale: number): Report['unmatched'] {
 
 function reportFor(period: string, scale: number): Report {
   return {
+    company: COMPANY,
     unmatched: unmatchedFor(period, scale),
     templateId: 'french-profit-and-loss',
     templateName: 'Profit and loss',
@@ -163,6 +168,7 @@ function reportFor(period: string, scale: number): Report {
  * and its figures are invented; they net to zero, as a BalanceSheet's do.
  */
 const balanceSheetFor = (period: string): Report => ({
+  company: COMPANY,
   templateId: 'french-balance-sheet',
   templateName: 'Balance sheet',
   period,
