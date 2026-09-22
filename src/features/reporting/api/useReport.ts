@@ -28,11 +28,16 @@ export function useReport(templateId: string, period: string): UseQueryResult<Re
 
       const report = (await response.json()) as Partial<Report>;
 
-      // The contract says `unmatched` is always present. Without it this is an
-      // older file, and a Report that never accounted for what it left out must
-      // not be shown as if it had.
+      // The contract says `unmatched` and `company` are always present. Without
+      // either this is an older file: one that never accounted for what it left
+      // out, or one from before a Report said whose data it was. Neither should
+      // be shown as if it were current.
       if (report.unmatched === undefined) {
         throw httpError('The Report is missing its unmatched group.', response.status);
+      }
+
+      if (report.company === undefined) {
+        throw httpError('The Report is missing its Company.', response.status);
       }
 
       return report as Report;

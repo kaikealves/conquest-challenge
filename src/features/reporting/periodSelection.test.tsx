@@ -83,6 +83,7 @@ test('changing ReportTemplate falls back to the latest Period when the new one l
   server.use(
     http.get(templateIndexUrl(), () =>
       HttpResponse.json({
+        company: { name: 'Test Co' },
         templates: [
           { id: 'french-profit-and-loss', name: 'Profit and loss', periods: ['2015', '2016'] },
           { id: 'french-balance-sheet', name: 'Balance sheet', periods: ['2016'] },

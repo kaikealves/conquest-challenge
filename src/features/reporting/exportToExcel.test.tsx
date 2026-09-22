@@ -151,6 +151,12 @@ test('the export is of the ReportTemplate and Period displayed', async () => {
   expect(sheet.getCell('A1').value).toContain('2015');
 });
 
+test('the exported file says whose Company it is, so it is self-describing once it leaves the page', async () => {
+  const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
+
+  expect(sheet.getCell('A1').value).toContain('Northwind Freight Cooperative');
+});
+
 test('the unmatched group is exported even when it is empty', async () => {
   const sheet = await exportFrom('/reports/french-profit-and-loss/2016');
 
@@ -191,10 +197,14 @@ async function exportOf(
 ): Promise<ExcelJS.Worksheet> {
   server.use(
     http.get(templateIndexUrl(), () =>
-      HttpResponse.json({ templates: [{ id: 'custom', name: templateName, periods: ['2016'] }] }),
+      HttpResponse.json({
+        company: { name: 'Custom Co' },
+        templates: [{ id: 'custom', name: templateName, periods: ['2016'] }],
+      }),
     ),
     http.get(REPORT_URL_PATTERN, () =>
       HttpResponse.json({
+        company: { name: 'Custom Co' },
         templateId: 'custom',
         templateName,
         period: '2016',

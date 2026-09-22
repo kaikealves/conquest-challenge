@@ -14,6 +14,15 @@ import type {
  * decimal type. The Excel export converts to a number at the cell boundary,
  * since a spreadsheet cell must hold a number rather than text.
  */
+/**
+ * The accounting entity a Report belongs to. Supplied when the importer runs
+ * and carried through unchanged — Reporting does not reinterpret it the way it
+ * reinterprets an AuxiliaryAccount or a FiscalYear. See ADR-0009.
+ */
+export type Company = {
+  readonly name: string;
+};
+
 export type Account = {
   /** The AccountCode. Variable length; never padded or parsed as a number. */
   readonly code: string;
@@ -33,6 +42,7 @@ export type Category = {
 };
 
 export type Report = {
+  readonly company: Company;
   /**
    * The Accounts no Category claimed, gathered rather than dropped so an
    * incomplete ReportTemplate shows up as a figure. Always present: a template
@@ -277,6 +287,7 @@ export function buildReport(
   template: ReportTemplate,
   period: string,
   currency: Currency,
+  company: Company,
 ): Report {
   const accounts = [...totals.values()].map((account) => forKind(account, template.kind));
   const placement = placeAccounts(template.categories, accounts);
@@ -298,6 +309,7 @@ export function buildReport(
   );
 
   return {
+    company,
     templateId: template.id,
     templateName: template.name,
     period,

@@ -608,3 +608,18 @@ test('nothing disappears from a BalanceSheet with a Result and a scope', async (
     expect(inReport).toBe(netByPeriod(openingBalanceAndOrdinaryEntries).get(report.period));
   }
 });
+
+test('a Report carries the Company it was built for', async () => {
+  const [report] = await buildReports(inChunks(purchasesAcrossTwoFiscalYears), purchases, {
+    name: 'Acme Freight',
+  });
+
+  expect(report?.company).toEqual({ name: 'Acme Freight' });
+});
+
+test('a caller who does not say which Company still gets one, not nothing', async () => {
+  const [report] = await buildReports(inChunks(purchasesAcrossTwoFiscalYears), purchases);
+
+  expect(report?.company.name).toBeTypeOf('string');
+  expect(report?.company.name).not.toBe('');
+});

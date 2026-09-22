@@ -79,7 +79,7 @@ export async function buildWorkbook(report: Report): Promise<ExcelJS.Workbook> {
   sheet.columns = [{ width: 14 }, { width: 46 }, { width: 18 }];
 
   sheet.addRow([
-    `${report.templateName} · Period ${report.period} · amounts in ${report.currency}`,
+    `${report.company.name} · ${report.templateName} · Period ${report.period} · amounts in ${report.currency}`,
   ]);
   sheet.getRow(1).font = { bold: true, size: 13 };
 

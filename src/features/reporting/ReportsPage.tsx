@@ -1,5 +1,6 @@
 import { Link, Navigate, useNavigate, useParams } from 'react-router';
 
+import type { Company } from './api/contract.ts';
 import { useTemplates } from './api/useTemplates.ts';
 import { PeriodChooser } from './components/PeriodChooser.tsx';
 import { TemplateChooser } from './components/TemplateChooser.tsx';
@@ -50,7 +51,12 @@ export function ReportsPage() {
   const [first] = index.templates;
 
   if (!first) {
-    return <p>There are no ReportTemplates to choose from.</p>;
+    return (
+      <>
+        <CompanyHeading company={index.company} />
+        <p>There are no ReportTemplates to choose from.</p>
+      </>
+    );
   }
 
   if (templateId === undefined) {
@@ -62,6 +68,7 @@ export function ReportsPage() {
   if (!template) {
     return (
       <div className="flex flex-col gap-3">
+        <CompanyHeading company={index.company} />
         <p role="alert">
           There is no ReportTemplate called <strong>{templateId}</strong>. The link may be out of
           date. Choose one that exists:
@@ -82,7 +89,12 @@ export function ReportsPage() {
   const latest = latestOf(template.periods);
 
   if (latest === undefined) {
-    return <p>This ReportTemplate has no Reports yet.</p>;
+    return (
+      <>
+        <CompanyHeading company={index.company} />
+        <p>This ReportTemplate has no Reports yet.</p>
+      </>
+    );
   }
 
   if (period === undefined) {
@@ -101,6 +113,7 @@ export function ReportsPage() {
   if (!template.periods.includes(period)) {
     return (
       <div className="flex flex-col gap-6">
+        <CompanyHeading company={index.company} />
         <TemplateChooser
           templates={index.templates}
           selectedId={template.id}
@@ -127,6 +140,7 @@ export function ReportsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      <CompanyHeading company={index.company} />
       <div className="flex flex-wrap gap-x-8 gap-y-3">
         <TemplateChooser
           templates={index.templates}
@@ -142,4 +156,14 @@ export function ReportsPage() {
       <ReportScreen templateId={template.id} period={period} />
     </div>
   );
+}
+
+/**
+ * Whose data this is, shown as soon as the ReportTemplate index has loaded —
+ * before a reader has to work it out from a Report's own heading, or from
+ * nothing at all. There is one Company per running instance of this
+ * application; see ADR-0009.
+ */
+function CompanyHeading({ company }: { readonly company: Company }) {
+  return <p className="text-sm font-medium text-slate-500">{company.name}</p>;
 }

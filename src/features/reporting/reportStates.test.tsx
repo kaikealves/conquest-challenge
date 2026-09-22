@@ -44,6 +44,7 @@ function respondWith(status: number, body: Record<string, unknown>) {
 }
 
 const aReportWith = (categories: unknown[]) => ({
+  company: { name: 'Test Co' },
   templateId: 'french-profit-and-loss',
   templateName: 'Profit and loss',
   period: '2016',
@@ -193,5 +194,12 @@ test('a payload without the unmatched group is a failed load, not a blank page',
 
   // An older file left behind next to a newer bundle: the contract says the
   // group is always there, so its absence means the Report cannot be trusted.
+  expect(await screen.findByRole('button', { name: /try again/i })).toBeVisible();
+});
+
+test('a Report without its Company is a failed load, not a page that pretends nothing is wrong', async () => {
+  respondWith(200, { ...aReportWith([]), company: undefined });
+  renderApp();
+
   expect(await screen.findByRole('button', { name: /try again/i })).toBeVisible();
 });

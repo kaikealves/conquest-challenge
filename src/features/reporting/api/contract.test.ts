@@ -48,7 +48,9 @@ function everyAmountIn(category: Category): string[] {
 }
 
 test('what the importer writes satisfies the type the application reads', async () => {
-  const [produced] = await buildReports(inChunks(accountsAcrossNestedCategories), template);
+  const [produced] = await buildReports(inChunks(accountsAcrossNestedCategories), template, {
+    name: 'Contract Test Co',
+  });
 
   // The annotation is the assertion, and deliberately not a cast: if the
   // importer's output stops satisfying the client's contract, this file stops
@@ -59,8 +61,17 @@ test('what the importer writes satisfies the type the application reads', async 
   // the output has no field the client has never heard of. Naming the whole set
   // catches a server that starts sending something the application ignores.
   expect(Object.keys(produced ?? {}).sort()).toEqual(
-    ['categories', 'currency', 'period', 'templateId', 'templateName', 'unmatched'].sort(),
+    [
+      'categories',
+      'company',
+      'currency',
+      'period',
+      'templateId',
+      'templateName',
+      'unmatched',
+    ].sort(),
   );
+  expect(report?.company).toEqual({ name: 'Contract Test Co' });
   expect(report?.templateId).toBe('operating-expenses');
   expect(report?.period).toBe('2016');
   expect(report?.currency).toBe('EUR');

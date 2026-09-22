@@ -36,3 +36,11 @@ different things either side of the boundary.
 - **Shared**: `AccountCode` and `Money` are value objects of the importer. They
   do not exist in the application, which receives computed decimal strings rather
   than amounts it must do arithmetic on.
+
+- **Shared, and crossing the boundary**: **Company** — the accounting entity
+  whose ledger is being imported — is supplied when the importer runs and
+  carried through to the application unchanged, on both `ReportTemplateIndex`
+  and `Report`. Unlike `AccountCode` and `Money`, it is not reinterpreted at any
+  boundary, so it gets one definition rather than two: whatever import receives
+  is exactly what a Report and the page display. See
+  [ADR-0009](./docs/adr/0009-company-is-a-shared-passthrough.md).

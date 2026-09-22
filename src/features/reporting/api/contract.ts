@@ -30,6 +30,15 @@
  * spreadsheet cell must hold a number rather than text.
  */
 
+/**
+ * The accounting entity a Report belongs to. Carried through unchanged from
+ * wherever the data was imported from; the application never reinterprets it.
+ * See ADR-0009.
+ */
+export type Company = {
+  readonly name: string;
+};
+
 export type Account = {
   /** The AccountCode. Variable length; never padded or parsed as a number. */
   readonly code: string;
@@ -51,6 +60,7 @@ export type Category = {
 };
 
 export type Report = {
+  readonly company: Company;
   /**
    * The Accounts no Category claimed, so an incomplete ReportTemplate is a figure
    * and not a silent loss. Always present, and empty when the template covers
@@ -74,6 +84,7 @@ export type ReportTemplateSummary = {
 };
 
 export type ReportTemplateIndex = {
+  readonly company: Company;
   readonly templates: readonly ReportTemplateSummary[];
 };
 

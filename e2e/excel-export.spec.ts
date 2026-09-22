@@ -13,12 +13,16 @@ import ExcelJS from 'exceljs';
 test('the Report on screen downloads as a spreadsheet with real numbers', async ({ page }) => {
   await page.route('**/data/templates.json', (route) =>
     route.fulfill({
-      json: { templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }] },
+      json: {
+        company: { name: 'Export Demo Co' },
+        templates: [{ id: 'alpha', name: 'Alpha', periods: ['2016'] }],
+      },
     }),
   );
   await page.route('**/data/reports/alpha/2016.json', (route) =>
     route.fulfill({
       json: {
+        company: { name: 'Export Demo Co' },
         templateId: 'alpha',
         templateName: 'Alpha',
         period: '2016',
@@ -67,4 +71,5 @@ test('the Report on screen downloads as a spreadsheet with real numbers', async 
   expect(cells['Expenses']).toBe(850.5);
   expect(cells['Locations']).toBe(850.5);
   expect(cells['Unmatched']).toBe(0);
+  expect(sheet?.getCell('A1').value).toContain('Export Demo Co');
 });

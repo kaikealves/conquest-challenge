@@ -25,6 +25,16 @@ test('the importer’s own Reports are what the application shows', async ({ pag
   await expect(page.getByRole('combobox', { name: 'Period' })).toHaveValue('2016');
 });
 
+test('given no Company, the importer derives one from the payload’s own filename', async ({
+  page,
+}) => {
+  // This mode's fixture is `accounts-across-nested-categories.xml`, and no
+  // Company was passed on the command line — see `playwright.config.ts`.
+  await page.goto('/');
+
+  await expect(page.getByText('Accounts Across Nested Categories')).toBeVisible();
+});
+
 test('a Period the importer did not write is a plain not-found, not an error state', async ({
   page,
 }) => {

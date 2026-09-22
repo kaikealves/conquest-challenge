@@ -1,7 +1,15 @@
 import { readEntries } from './providers/wcfGeneralLedger.ts';
 import type { Currency } from './domain/money.ts';
-import { buildReport, totalByAccountAndPeriod, type Report } from './reporting/report.ts';
+import {
+  buildReport,
+  totalByAccountAndPeriod,
+  type Company,
+  type Report,
+} from './reporting/report.ts';
 import type { ReportTemplate } from './reporting/reportTemplate.ts';
+
+/** Used when a caller does not say which Company a Report is for — most tests. */
+const UNSPECIFIED_COMPANY: Company = { name: 'Unspecified Company' };
 
 /**
  * Seam 1: a Provider payload in, one Report per Period out.
@@ -13,11 +21,12 @@ import type { ReportTemplate } from './reporting/reportTemplate.ts';
 export async function buildReports(
   payload: AsyncIterable<string>,
   template: ReportTemplate,
+  company: Company = UNSPECIFIED_COMPANY,
   currency: Currency = 'EUR',
 ): Promise<Report[]> {
   const byPeriod = await totalByAccountAndPeriod(readEntries(payload), currency);
 
   return [...byPeriod.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([period, totals]) => buildReport(totals, template, period, currency));
+    .map(([period, totals]) => buildReport(totals, template, period, currency, company));
 }

@@ -5,6 +5,7 @@ import { expect, test } from '@playwright/test';
  * real browser against the built site, with the API answered at the network edge.
  */
 const reportFor = (period: string, total: string) => ({
+  company: { name: 'Period Co' },
   templateId: 'alpha',
   templateName: 'Alpha',
   period,
@@ -16,7 +17,10 @@ const reportFor = (period: string, total: string) => ({
 test.beforeEach(async ({ page }) => {
   await page.route('**/data/templates.json', (route) =>
     route.fulfill({
-      json: { templates: [{ id: 'alpha', name: 'Alpha', periods: ['2015', '2016'] }] },
+      json: {
+        company: { name: 'Period Co' },
+        templates: [{ id: 'alpha', name: 'Alpha', periods: ['2015', '2016'] }],
+      },
     }),
   );
   await page.route('**/data/reports/alpha/2015.json', (route) =>
