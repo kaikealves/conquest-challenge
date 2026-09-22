@@ -47,6 +47,7 @@ export type Category = {
 
 export type Report = {
   readonly company: Company;
+  readonly kind: ReportKind;
   /**
    * The Accounts no Category claimed, gathered rather than dropped so an
    * incomplete ReportTemplate shows up as a figure. Always present: a template
@@ -59,6 +60,13 @@ export type Report = {
   readonly period: string;
   readonly currency: Currency;
   readonly categories: readonly Category[];
+  /**
+   * The bottom line: the net of every top-level Category and `unmatched`. For a
+   * ProfitAndLoss it is the net result, a profit being a credit; for a
+   * BalanceSheet with a Result it is zero, which is what balancing means. Sent
+   * rather than left to the client, which does no arithmetic on amounts.
+   */
+  readonly total: string;
   /**
    * True for a BalanceSheet whose Period holds no OpeningBalance Entries though
    * an earlier Period exists in the ledger: nothing was carried forward, so its
@@ -334,8 +342,20 @@ export function buildReport(
       inScope(account, template),
   );
 
+  const reported = accounts.filter(
+    ({ account }) =>
+      placement.has(account.value) ||
+      claimedByResult.has(account.value) ||
+      inScope(account, template),
+  );
+  const total = reported.reduce<Money>(
+    (running, account) => add(running, account.total),
+    zero(currency),
+  );
+
   return {
     company,
+    kind: template.kind,
     templateId: template.id,
     templateName: template.name,
     period,
@@ -344,6 +364,7 @@ export function buildReport(
       ? [...categories, flatCategory(template.result.label, forResult, currency)]
       : categories,
     unmatched: flatCategory(UNMATCHED_LABEL, leftOver, currency),
+    total: moneyToDecimal(total),
     missingOpeningBalances:
       template.kind === 'BalanceSheet' && followsEarlierPeriod && !carriesAnythingForward(totals),
   };

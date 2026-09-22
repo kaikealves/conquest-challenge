@@ -12,10 +12,16 @@ import { renderApp } from '../../shared/testing/renderApp.tsx';
  */
 async function reportRows() {
   const table = await screen.findByRole('table');
+  // The body only: the header names the columns and the footer holds the
+  // bottom line, and neither is a Category.
+  const [, body] = within(table).getAllByRole('rowgroup');
 
-  return within(table)
+  if (!body) {
+    throw new Error('The Report has no body.');
+  }
+
+  return within(body)
     .getAllByRole('row')
-    .slice(1) // the header
     .map((row) => within(row).getAllByRole('rowheader')[0]?.textContent ?? '');
 }
 

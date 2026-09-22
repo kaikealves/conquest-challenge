@@ -1,6 +1,7 @@
 import type ExcelJS from 'exceljs';
 
 import type { Category, Report } from '../api/contract.ts';
+import { bottomLineOf } from '../bottomLine.ts';
 
 /**
  * Lays a Report out as a spreadsheet.
@@ -114,6 +115,17 @@ export async function buildWorkbook(report: Report): Promise<ExcelJS.Workbook> {
   // `categories` in the payload, so a walk of `categories` alone would drop it.
   for (const category of [...report.categories, report.unmatched]) {
     add(category, 0);
+  }
+
+  const bottomLine = bottomLineOf(report);
+
+  if (bottomLine) {
+    const row = sheet.addRow(['', bottomLine.label, cellValueFor(bottomLine.amount)]);
+
+    row.font = { bold: true };
+    row.getCell(3).numFmt = format;
+    row.getCell(2).border = { top: { style: 'thin' } };
+    row.getCell(3).border = { top: { style: 'thin' } };
   }
 
   sheet.views = [{ state: 'frozen', ySplit: 2 }];

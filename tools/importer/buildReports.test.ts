@@ -208,6 +208,30 @@ test('a ProfitAndLoss never needs opening balances, so is never flagged for lack
   });
 });
 
+test('a Report says which kind it is', async () => {
+  expect((await only(balanceSheet))?.kind).toBe('BalanceSheet');
+  expect((await only(profitAndLossOverTheBank))?.kind).toBe('ProfitAndLoss');
+});
+
+test('a BalanceSheet’s bottom line is zero, which is what balancing means', async () => {
+  expect((await only(balanceSheet))?.total).toBe('0.00');
+});
+
+test('a ProfitAndLoss’s bottom line is its net result, unmatched Accounts included', async () => {
+  const report = await only({
+    id: 'profit-and-loss',
+    name: 'Profit and loss',
+    country: 'FR',
+    kind: 'ProfitAndLoss',
+    // The 250.00 sale falls under no Category, so only `unmatched` holds it.
+    categories: [{ label: 'Expenses', categoryRoots: ['6'] }],
+    scope: ['6', '7'],
+  });
+
+  // A profit is a credit, so negative.
+  expect(report?.total).toBe('-250.00');
+});
+
 test('a journal code that only resembles the carried-forward one is not left out', async () => {
   const [report] = await buildReports(
     inChunks(journalsThatOnlyLookLikeOpeningBalances),
@@ -619,6 +643,7 @@ test('nothing in scope disappears from a scoped ProfitAndLoss either', async () 
         0n,
       );
 
+      expect(toCents(report.total), `${name}, ${report.period}: total`).toBe(inReport);
       // The oracle: revenue and expense Accounts' net, straight off the payload.
       expect(inReport, `${name}, ${report.period}`).toBe(
         netByPeriod(payload, (code) => code.startsWith('6') || code.startsWith('7')).get(

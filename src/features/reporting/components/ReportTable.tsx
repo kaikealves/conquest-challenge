@@ -1,8 +1,10 @@
 import { useId } from 'react';
 
 import type { Report } from '../api/contract.ts';
+import { bottomLineOf } from '../bottomLine.ts';
 import { DISPLAY_LOCALE } from '../displayLocale.ts';
 import { formatAmount } from '../formatAmount.ts';
+import { AmountCell } from './AmountCell.tsx';
 import { ExportButton } from './ExportButton.tsx';
 import { CategoryRow } from './CategoryRow.tsx';
 
@@ -80,9 +82,40 @@ export function ReportTable({ report }: ReportTableProps) {
                 something in it would make its absence mean nothing. */}
             <CategoryRow category={report.unmatched} currency={report.currency} />
           </tbody>
+          <BottomLineFooter report={report} />
         </table>
       </div>
     </section>
+  );
+}
+
+/** The Report's last line: a ProfitAndLoss's net result, or a BalanceSheet's balance check. */
+function BottomLineFooter({ report }: { readonly report: Report }) {
+  const line = bottomLineOf(report);
+
+  if (!line) {
+    return null;
+  }
+
+  return (
+    <tfoot>
+      <tr className="border-t-2 border-slate-300">
+        <th
+          scope="row"
+          className={`py-2.5 pr-4 pl-5 text-left font-semibold ${
+            line.balanced === false ? 'text-red-700' : 'text-slate-900'
+          }`}
+        >
+          {line.balanced === true && (
+            <span aria-hidden="true" className="mr-1.5 text-emerald-700">
+              ✓
+            </span>
+          )}
+          {line.label}
+        </th>
+        <AmountCell amount={line.amount} currency={report.currency} />
+      </tr>
+    </tfoot>
   );
 }
 

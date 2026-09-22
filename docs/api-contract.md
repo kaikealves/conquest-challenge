@@ -47,8 +47,11 @@ a network tab, not for display.
    revenue and expense Accounts directly and has no children, so a client must
    not assume every Account is a balance-sheet one. A BalanceSheet includes
    balances carried forward from the previous FiscalYear; a ProfitAndLoss
-   excludes them. The payload does not say which kind a Report is; a client has
-   no arithmetic to do that would need it.
+   excludes them. `kind` says which a Report is, and `total` is the net of its
+   top-level Categories and `unmatched`: a ProfitAndLoss's net result (a profit
+   is a credit, so negative), and `0.00` for a BalanceSheet that balances. The
+   server sends both so the client does no arithmetic to show a bottom line; a
+   client that meets a payload without them shows none.
 
    `missingOpeningBalances` is true for a BalanceSheet whose Period carries
    nothing forward although the ledger holds an earlier Period — as when a
@@ -139,16 +142,18 @@ a network tab, not for display.
 }
 ```
 
-| Field                    | Type       | Notes                                      |
-| ------------------------ | ---------- | ------------------------------------------ |
-| `company`                | Company    | See rule 10                                |
-| `templateId`             | string     | Matches the slug in the URL                |
-| `templateName`           | string     | For display                                |
-| `period`                 | string     | The FiscalYear, `YYYY`                     |
-| `currency`               | string     | ISO 4217                                   |
-| `categories`             | Category[] | Ordered as the ReportTemplate defines them |
-| `unmatched`              | Category   | See rule 9                                 |
-| `missingOpeningBalances` | boolean    | See rule 8                                 |
+| Field                    | Type       | Notes                                         |
+| ------------------------ | ---------- | --------------------------------------------- |
+| `company`                | Company    | See rule 10                                   |
+| `templateId`             | string     | Matches the slug in the URL                   |
+| `templateName`           | string     | For display                                   |
+| `period`                 | string     | The FiscalYear, `YYYY`                        |
+| `currency`               | string     | ISO 4217                                      |
+| `categories`             | Category[] | Ordered as the ReportTemplate defines them    |
+| `unmatched`              | Category   | See rule 9                                    |
+| `missingOpeningBalances` | boolean    | See rule 8                                    |
+| `kind`                   | string     | `BalanceSheet` or `ProfitAndLoss`; see rule 8 |
+| `total`                  | string     | Exact decimal; the bottom line, see rule 8    |
 
 ### Category
 

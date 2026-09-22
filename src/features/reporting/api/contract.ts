@@ -71,8 +71,13 @@ export type Category = {
   readonly accounts: readonly Account[];
 };
 
+/** What a Report is, which decides what its bottom line means. */
+export type ReportKind = 'BalanceSheet' | 'ProfitAndLoss';
+
 export type Report = {
   readonly company: Company;
+  /** Absent from a payload written before the field existed. */
+  readonly kind?: ReportKind;
   /**
    * The Accounts no Category claimed, so an incomplete ReportTemplate is a figure
    * and not a silent loss. Always present, and empty when the template covers
@@ -86,6 +91,13 @@ export type Report = {
   /** ISO 4217. */
   readonly currency: string;
   readonly categories: readonly Category[];
+  /**
+   * Exact decimal: the net of every top-level Category and `unmatched`. A
+   * ProfitAndLoss's net result, a profit being a credit; zero for a BalanceSheet
+   * that balances. Sent by the server so the client does no arithmetic. Absent
+   * from a payload written before the field existed, and then not shown.
+   */
+  readonly total?: string;
   /**
    * True when this is a BalanceSheet for a Period that carried no balances
    * forward from an earlier one, so its figures are that year's movements

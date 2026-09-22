@@ -172,7 +172,10 @@ function unmatchedFor(period: string, scale: number): Report['unmatched'] {
 function reportFor(period: string, scale: number): Report {
   return {
     company: NORTHWIND,
+    kind: 'ProfitAndLoss',
     unmatched: unmatchedFor(period, scale),
+    // The top-level Categories net to -6389.75 at scale 1; 2015 adds its unmatched 40.
+    total: ((-6389.75 + (period === '2015' ? 40 : 0)) * scale).toFixed(2),
     missingOpeningBalances: false,
     templateId: 'french-profit-and-loss',
     templateName: 'Profit and loss',
@@ -190,11 +193,13 @@ function reportFor(period: string, scale: number): Report {
  */
 const balanceSheetFor = (period: string): Report => ({
   company: NORTHWIND,
+  kind: 'BalanceSheet',
   templateId: 'french-balance-sheet',
   templateName: 'Balance sheet',
   period,
   currency: 'EUR',
   unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  total: '0.00',
   missingOpeningBalances: false,
   categories: [
     {
@@ -239,11 +244,13 @@ const balanceSheetFor = (period: string): Report => ({
  */
 const riversideProfitAndLoss: Report = {
   company: RIVERSIDE,
+  kind: 'ProfitAndLoss',
   templateId: 'uk-profit-and-loss',
   templateName: 'Profit and loss',
   period: '2016',
   currency: 'EUR',
   unmatched: { label: 'Unmatched', total: '0.00', children: [], accounts: [] },
+  total: '-4060.00',
   missingOpeningBalances: false,
   categories: [
     {

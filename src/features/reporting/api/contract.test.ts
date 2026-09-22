@@ -68,10 +68,12 @@ test('what the importer writes satisfies the type the application reads', async 
       'categories',
       'company',
       'currency',
+      'kind',
       'missingOpeningBalances',
       'period',
       'templateId',
       'templateName',
+      'total',
       'unmatched',
     ].sort(),
   );

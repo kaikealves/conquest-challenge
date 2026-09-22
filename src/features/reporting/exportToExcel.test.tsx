@@ -188,6 +188,14 @@ test('the Result of a BalanceSheet is exported like any other Category', async (
   expect(totalOf(sheet, 'Result')).toBe(-1000);
 });
 
+test('the export ends on the same bottom line as the screen', async () => {
+  const profitAndLoss = await exportFrom(
+    '/companies/northwind-freight/reports/french-profit-and-loss/2016',
+  );
+
+  expect(totalOf(profitAndLoss, 'Net result (profit)')).toBe(-6389.75);
+});
+
 test('a failed export says so and can be tried again', async () => {
   const user = userEvent.setup();
   URL.createObjectURL = vi.fn(() => {
