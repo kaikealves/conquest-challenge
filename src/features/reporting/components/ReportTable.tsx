@@ -22,13 +22,16 @@ export function ReportTable({ report }: ReportTableProps) {
   const headingId = useId();
 
   return (
-    <section aria-labelledby={headingId} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
+    <section
+      aria-labelledby={headingId}
+      className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm"
+    >
+      <div className="flex flex-wrap items-start justify-between gap-3 border-b border-slate-200 bg-slate-50/60 px-5 py-4">
         <div>
-          <h2 id={headingId} className="text-xl font-semibold text-slate-900">
+          <h2 id={headingId} className="text-lg font-semibold tracking-tight text-slate-900">
             {report.templateName}
           </h2>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-slate-500">
             Period {report.period} · amounts in {report.currency} · credits in parentheses
           </p>
         </div>
@@ -37,37 +40,47 @@ export function ReportTable({ report }: ReportTableProps) {
         <ExportButton key={`${report.templateId}/${report.period}`} report={report} />
       </div>
 
-      <UnmatchedNotice report={report} />
+      <div className="px-5 pt-4">
+        <UnmatchedNotice report={report} />
+      </div>
 
-      <table className="w-full border-collapse text-sm">
-        <caption className="sr-only">
-          Categories of the {report.templateName} for Period {report.period}
-        </caption>
-        <thead>
-          <tr className="border-b border-slate-300">
-            <th scope="col" className="py-2 pr-4 text-left font-medium text-slate-600">
-              Category
-            </th>
-            <th scope="col" className="py-2 text-right font-medium text-slate-600">
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {report.categories.map((category, position) => (
-            // The contract does not promise a Category label is unique, so the
-            // key carries its position as well.
-            <CategoryRow
-              key={`${String(position)}-${category.label}`}
-              category={category}
-              currency={report.currency}
-            />
-          ))}
-          {/* Always drawn, empty or not: a group that appeared only when it had
-              something in it would make its absence mean nothing. */}
-          <CategoryRow category={report.unmatched} currency={report.currency} />
-        </tbody>
-      </table>
+      <div className="overflow-x-auto px-5 pb-5">
+        <table className="w-full border-collapse text-sm">
+          <caption className="sr-only">
+            Categories of the {report.templateName} for Period {report.period}
+          </caption>
+          <thead>
+            <tr className="border-b border-slate-200">
+              <th
+                scope="col"
+                className="py-2 pr-4 text-left text-xs font-semibold tracking-wide text-slate-500 uppercase"
+              >
+                Category
+              </th>
+              <th
+                scope="col"
+                className="py-2 text-right text-xs font-semibold tracking-wide text-slate-500 uppercase"
+              >
+                Total
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {report.categories.map((category, position) => (
+              // The contract does not promise a Category label is unique, so the
+              // key carries its position as well.
+              <CategoryRow
+                key={`${String(position)}-${category.label}`}
+                category={category}
+                currency={report.currency}
+              />
+            ))}
+            {/* Always drawn, empty or not: a group that appeared only when it had
+                something in it would make its absence mean nothing. */}
+            <CategoryRow category={report.unmatched} currency={report.currency} />
+          </tbody>
+        </table>
+      </div>
     </section>
   );
 }
