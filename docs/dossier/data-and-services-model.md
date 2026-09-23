@@ -347,7 +347,7 @@ movements.
 The brief requires assets to equal liabilities. In this design that is a
 consequence, not a separate check:
 
-1. Every stored Transaction sums to zero — enforced at import (§5, Ledger).
+1. Every stored Transaction sums to zero — enforced at import (§4.6, and §5, Ledger).
 2. So all Entries of a Company, summed over any complete set of Transactions,
    sum to zero.
 3. Those Entries split into balance-sheet Accounts and revenue/expense
@@ -379,6 +379,64 @@ For a Company, a ReportTemplate and a Period:
 4. **Add up.** Each Category's total is its children's totals plus its own
    Accounts.
 5. **Check.** For a BalanceSheet, assert the net is zero (§4.4).
+
+### 4.6 Checking the zero-sum rule when the payload is out of order
+
+Every Transaction must sum to zero (§4.2). A Transaction that does not is
+corrupt or incomplete, and is quarantined rather than stored: one bad
+Transaction must not move a Report, and it must not be silently dropped
+either, so the quarantine records it with the amount by which it fails.
+
+**The obvious check is wrong on real data.** The natural way to validate
+while parsing is to collect Entries until the Transaction identifier changes,
+then check that group. It assumes a Provider sends a Transaction's Entries
+together. The sample Provider does not: it sorts its payload by Account, so
+one Transaction's Entries are scattered through the document. On the sample
+ledger, that check would see several times more fragments than there are
+Transactions, almost none of them summing to zero, and would quarantine
+nearly the whole ledger — while making it look like the Provider had sent bad
+data. The ledger itself is sound; the assumption about its order was not.
+
+**The backend avoids the problem by not checking while parsing.** It loads
+every Entry of the window into a staging table first and validates with one
+set-based query (part 2, §2.1, and §5.2, "Scattered Transactions"):
+
+```sql
+SELECT transaction_ref, SUM(amount) AS imbalance, COUNT(*) AS entry_count
+FROM staged_entry
+GROUP BY transaction_ref
+HAVING SUM(amount) <> 0;
+```
+
+Order no longer matters, because the database groups the Entries however
+they arrived. This is the design the backend uses.
+
+**Without a database, streaming costs a second pass.** A tool that streams
+the payload and holds no Entry in memory — this repository's importer is one
+— cannot group Entries it has already let go of. Holding every Entry until
+the document ends would work, but memory would grow with the ledger, which
+for thirty years of a large Company is the wrong direction. Two passes over
+the payload keep memory small instead:
+
+1. **First pass:** keep only a running sum per Transaction identifier.
+   Memory grows with the number of Transactions, and no Entry is held.
+2. The identifiers whose sum is not zero are the quarantined set, each with
+   its imbalance as the reason.
+3. **Second pass:** fold Entries into Account totals as now, skipping any
+   Entry of a quarantined Transaction.
+
+The payload is read twice, which is cheap next to fetching it: the Provider's
+response time dominates an import (part 2, §5.1), and the second read is from
+local storage.
+
+**Where this stands in the repository.** The importer does not implement the
+check: the sample is balanced, so the only visible output would be a count
+of zero, and the importer is a stand-in for the backend rather than part of
+the design being assessed. What it does check is the consequence (§4.4):
+every BalanceSheet it builds nets to zero once the Result is counted, and the
+application shows that check under each BalanceSheet. That catches a ledger
+that is out of balance overall, though not two faults that happen to cancel
+out, which is why the backend checks each Transaction.
 
 ## 5. Services model
 
