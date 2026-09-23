@@ -4,12 +4,12 @@
 
 **Blocked by:** None.
 
-**Status:** ready-for-agent
+**Status:** resolved
 
-- [ ] The dossier explains the zero-sum invariant and why a Transaction is the unit that owns it
-- [ ] It records why this Provider's payload cannot be grouped into Transactions in one forward pass
-- [ ] It gives a design that validates the invariant without abandoning streaming
-- [ ] It states what a backend would do differently, having a database rather than a stream
+- [x] The dossier explains the zero-sum invariant and why a Transaction is the unit that owns it
+- [x] It records why this Provider's payload cannot be grouped into Transactions in one forward pass
+- [x] It gives a design that validates the invariant without abandoning streaming
+- [x] It states what a backend would do differently, having a database rather than a stream
 
 ## Comments
 
@@ -40,3 +40,10 @@ Two passes, memory proportional to Transactions plus Accounts and never to
 Entries. A backend importing into a database would not need this: it would insert
 Entries, then validate with a `GROUP BY` having a non-zero sum. That contrast is
 worth stating — the constraint comes from streaming a file, not from the domain.
+
+## Delivered
+
+Written as §4.6 of dossier part 1, "Checking the zero-sum rule when the
+payload is out of order". The finding is stated without the sample's own
+figures, which stay out of the repository. Part 2 already covered the backend's
+set-based check; §4.6 links to it rather than repeating it.

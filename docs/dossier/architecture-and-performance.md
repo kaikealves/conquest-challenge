@@ -138,7 +138,7 @@ fails with its error recorded and the raw payload kept for diagnosis.
    returns the Report, or `304` if the client's `ETag` still matches.
 3. On a miss it reads `account_balance` from the read replica — a few thousand
    rows — places each Account in its Category, adds up, checks a
-   BalanceSheet nets to zero (part 1, §4.5), stores the result and returns it.
+   BalanceSheet nets to zero (part 1, §4.4), stores the result and returns it.
 
 `ledgerVersion` is kept per Company and FiscalYear, on `fiscal_year`, and
 increments whenever an import touches that FiscalYear. Two things follow. A
