@@ -1,8 +1,8 @@
 # Ledger and Reporting are separate bounded contexts
 
 The word "Account" provably means two different things in this domain: in the
-accounting record, `0EDF` is a real posting target belonging to the customer
-sub-ledger; in any report, it does not exist, having been rolled up into its
+accounting record, a customer's own Account (say `0ACME`) is a real posting
+target in the customer sub-ledger; in any report, it does not exist, having been rolled up into its
 ControlAccount `411100`. Rather than forcing one shared definition, we split
 Ledger and Reporting into separate contexts and treat the auxiliary rollup as the
 translation between them.
